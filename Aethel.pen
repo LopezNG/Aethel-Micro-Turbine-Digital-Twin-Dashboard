@@ -101,7 +101,8 @@
               "content": "A Digital Twin for Micro-Gas Turbines using Temporal Machine Learning.",
               "textAlign": "center",
               "fontFamily": "Inter",
-              "fontSize": 16
+              "fontSize": 16,
+              "fontWeight": "normal"
             },
             {
               "type": "frame",
@@ -418,7 +419,8 @@
                       "fill": "$--font-secondary",
                       "content": "Virtual Lab",
                       "fontFamily": "Inter",
-                      "fontSize": 14
+                      "fontSize": 14,
+                      "fontWeight": "normal"
                     }
                   ]
                 },
@@ -452,7 +454,8 @@
                       "fill": "$--font-secondary",
                       "content": "Results",
                       "fontFamily": "Inter",
-                      "fontSize": 14
+                      "fontSize": 14,
+                      "fontWeight": "normal"
                     }
                   ]
                 },
@@ -486,7 +489,8 @@
                       "fill": "$--font-secondary",
                       "content": "API Sandbox",
                       "fontFamily": "Inter",
-                      "fontSize": 14
+                      "fontSize": 14,
+                      "fontWeight": "normal"
                     }
                   ]
                 },
@@ -520,7 +524,8 @@
                       "fill": "$--font-secondary",
                       "content": "Settings",
                       "fontFamily": "Inter",
-                      "fontSize": 14
+                      "fontSize": 14,
+                      "fontWeight": "normal"
                     }
                   ]
                 }
