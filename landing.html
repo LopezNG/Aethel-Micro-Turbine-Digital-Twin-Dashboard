@@ -63,6 +63,8 @@ body{
   filter:blur(120px);
   opacity:.6;
   z-index:-2;
+  animation:aethel-glow-breathe 9s ease-in-out infinite;
+  will-change:opacity,transform;
 }
 /* Turbine wireframe */
 .turbine{
@@ -75,8 +77,35 @@ body{
   color:var(--accent-cyan);
   z-index:-1;
   pointer-events:none;
+  transform-origin:center;
+  animation:aethel-turbine-drift 34s ease-in-out infinite;
+  will-change:transform;
 }
 .turbine svg{width:100%;height:100%;display:block}
+
+.particles{
+  position:absolute;
+  inset:0;
+  z-index:-1;
+  pointer-events:none;
+}
+.particle{
+  position:absolute;
+  width:4px;
+  height:4px;
+  border-radius:999px;
+  background:var(--accent-cyan);
+  box-shadow:0 0 14px var(--accent-cyan-dim);
+  animation:aethel-particle-float var(--particle-speed,24s) ease-in-out infinite;
+  will-change:transform;
+}
+.fade-up{
+  animation:aethel-fade-up 700ms ease-out both;
+}
+.delay-1{animation-delay:90ms}
+.delay-2{animation-delay:180ms}
+.delay-3{animation-delay:270ms}
+.delay-4{animation-delay:360ms}
 
 .title{
   font-size:clamp(3.5rem,12vw,6rem);
@@ -86,6 +115,7 @@ body{
   text-align:center;
 }
 .subtitle{
+  width:100%;
   max-width:50rem;
   font-size:clamp(1.25rem,3vw,1.75rem);
   font-weight:600;
@@ -94,6 +124,7 @@ body{
   line-height:1.3;
 }
 .subtext{
+  width:100%;
   max-width:44rem;
   font-size:1rem;
   color:var(--font-tertiary);
@@ -103,6 +134,8 @@ body{
 
 .badge-row{
   display:flex;
+  width:100%;
+  max-width:44rem;
   flex-wrap:wrap;
   justify-content:center;
   gap:1rem;
@@ -117,6 +150,12 @@ body{
   font-family:'JetBrains Mono',ui-monospace,monospace;
   font-size:.8125rem;
   color:var(--font-secondary);
+  transition:transform .18s ease,color .18s ease,background-color .18s ease,box-shadow .18s ease;
+}
+.badge:hover{
+  color:var(--font-primary);
+  transform:translateY(-2px);
+  box-shadow:0 10px 24px -18px var(--accent-cyan);
 }
 .badge i{display:inline-flex}
 .badge svg{width:16px;height:16px}
@@ -138,14 +177,46 @@ body{
   font-weight:700;
   cursor:pointer;
   text-decoration:none;
-  transition:transform .15s ease,box-shadow .15s ease;
+  transition:transform .2s ease,box-shadow .2s ease;
 }
-.cta:hover{transform:translateY(-1px);box-shadow:0 12px 32px -8px var(--accent-cyan-dim)}
+.cta:hover{transform:translateY(-2px);box-shadow:0 16px 36px -10px var(--accent-cyan-dim)}
+.cta:focus-visible{outline:2px solid var(--accent-cyan);outline-offset:4px}
+
+@keyframes aethel-fade-up{
+  from{opacity:0;transform:translateY(14px)}
+  to{opacity:1;transform:translateY(0)}
+}
+@keyframes aethel-glow-breathe{
+  0%,100%{opacity:.48;transform:translate(-50%,-50%) scale(.96)}
+  50%{opacity:.68;transform:translate(-50%,-50%) scale(1.04)}
+}
+@keyframes aethel-turbine-drift{
+  0%{transform:translate(-50%,-50%) rotate(0deg) scale(1)}
+  50%{transform:translate(-49%,-51%) rotate(5deg) scale(1.015)}
+  100%{transform:translate(-50%,-50%) rotate(0deg) scale(1)}
+}
+@keyframes aethel-particle-float{
+  0%,100%{transform:translate3d(0,0,0)}
+  50%{transform:translate3d(18px,-24px,0)}
+}
 
 @media (max-width:480px){
   .hero{padding:3rem 1rem;gap:1.5rem}
   .badge{padding:.4rem .75rem;font-size:.75rem}
   .cta{padding:.75rem 2rem;font-size:.9375rem}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .hero::before,
+  .turbine,
+  .particle,
+  .fade-up{
+    animation:none;
+  }
+  .badge:hover,
+  .cta:hover{
+    transform:none;
+  }
 }
 </style>
 </head>
@@ -157,19 +228,35 @@ body{
       <path d="M100 10l0 180m-90-90l180 0m-160-70l140 140m0-140l-140 140m70-160c30 30 60 60 70 90-10 30-40 60-70 90-30-30-60-60-70-90 10-30 40-60 70-90m0 20c20 20 40 45 45 70-5 25-25 50-45 70-20-20-40-45-45-70 5-25 25-50 45-70m0 20c10 15 25 30 30 50-5 20-20 35-30 50-10-15-25-30-30-50 5-20 20-35 30-50m-50 50a50 50 0 1 1 100 0 50 50 0 1 1-100 0m15 0a35 35 0 1 1 70 0 35 35 0 1 1-70 0m15 0a20 20 0 1 1 40 0 20 20 0 1 1-40 0"/>
     </svg>
   </div>
+  <div class="particles" aria-hidden="true">
+    <span class="particle" style="top:10%;left:8%;opacity:.22;animation-delay:0s;--particle-speed:18s"></span>
+    <span class="particle" style="top:29%;left:21%;opacity:.29;animation-delay:-1.7s;--particle-speed:22s"></span>
+    <span class="particle" style="top:48%;left:34%;opacity:.36;animation-delay:-3.4s;--particle-speed:26s"></span>
+    <span class="particle" style="top:67%;left:47%;opacity:.43;animation-delay:-5.1s;--particle-speed:30s"></span>
+    <span class="particle" style="top:12%;left:60%;opacity:.22;animation-delay:-6.8s;--particle-speed:34s"></span>
+    <span class="particle" style="top:31%;left:73%;opacity:.29;animation-delay:-8.5s;--particle-speed:18s"></span>
+    <span class="particle" style="top:50%;left:86%;opacity:.36;animation-delay:-10.2s;--particle-speed:22s"></span>
+    <span class="particle" style="top:69%;left:15%;opacity:.43;animation-delay:-11.9s;--particle-speed:26s"></span>
+    <span class="particle" style="top:14%;left:28%;opacity:.22;animation-delay:-13.6s;--particle-speed:30s"></span>
+    <span class="particle" style="top:33%;left:41%;opacity:.29;animation-delay:-15.3s;--particle-speed:34s"></span>
+    <span class="particle" style="top:52%;left:54%;opacity:.36;animation-delay:-17s;--particle-speed:18s"></span>
+    <span class="particle" style="top:71%;left:67%;opacity:.43;animation-delay:-18.7s;--particle-speed:22s"></span>
+    <span class="particle" style="top:16%;left:80%;opacity:.22;animation-delay:-20.4s;--particle-speed:26s"></span>
+    <span class="particle" style="top:35%;left:9%;opacity:.29;animation-delay:-22.1s;--particle-speed:30s"></span>
+  </div>
 
-  <h1 class="title">Aethel</h1>
-  <p class="subtitle">Predicting the Future of Energy Transitions.</p>
-  <p class="subtext">A Digital Twin for Micro-Gas Turbines using Temporal Machine Learning.</p>
+  <h1 class="title fade-up">Aethel</h1>
+  <p class="subtitle fade-up delay-1">Predicting the Future of Energy Transitions.</p>
+  <p class="subtext fade-up delay-2">A Digital Twin for Micro-Gas Turbines using Temporal Machine Learning.</p>
 
-  <div class="badge-row">
+  <div class="badge-row fade-up delay-3">
     <span class="badge"><i data-lucide="atom" class="ic-cyan"></i>React</span>
     <span class="badge"><i data-lucide="zap" class="ic-green"></i>FastAPI</span>
     <span class="badge"><i data-lucide="flame" class="ic-orange"></i>PyTorch</span>
     <span class="badge"><i data-lucide="container" class="ic-cyan"></i>Docker</span>
   </div>
 
-  <a href="dashboard.html" class="cta">Quick Start</a>
+  <a href="dashboard.html" class="cta fade-up delay-4">Quick Start</a>
 </main>
 
 <script>window.addEventListener('DOMContentLoaded',()=>window.lucide&&lucide.createIcons());</script>

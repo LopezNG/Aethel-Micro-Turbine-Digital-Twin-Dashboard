@@ -28,6 +28,59 @@
   --animate-pulse-dot: pulse-dot 1.6s ease-in-out infinite;
 }
 
+@keyframes aethel-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes aethel-glow-breathe {
+  0%,
+  100% {
+    opacity: 0.48;
+    transform: translate(-50%, -50%) scale(0.96);
+  }
+
+  50% {
+    opacity: 0.68;
+    transform: translate(-50%, -50%) scale(1.04);
+  }
+}
+
+@keyframes aethel-turbine-drift {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg) scale(1);
+  }
+
+  50% {
+    transform: translate(-49%, -51%) rotate(5deg) scale(1.015);
+  }
+
+  100% {
+    transform: translate(-50%, -50%) rotate(0deg) scale(1);
+  }
+}
+
+@keyframes aethel-particle-float {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  50% {
+    transform: translate3d(18px, -24px, 0);
+  }
+
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
 @keyframes pulse-dot {
   50% {
     opacity: 0.4;
@@ -67,5 +120,59 @@
     background: none;
     border: none;
     cursor: pointer;
+  }
+}
+
+@layer components {
+  .aethel-hero-glow {
+    animation: aethel-glow-breathe 9s ease-in-out infinite;
+    transform: translate(-50%, -50%);
+    will-change: opacity, transform;
+  }
+
+  .aethel-turbine {
+    animation: aethel-turbine-drift 34s ease-in-out infinite;
+    transform: translate(-50%, -50%);
+    transform-origin: center;
+    will-change: transform;
+  }
+
+  .aethel-particle {
+    animation: aethel-particle-float var(--aethel-particle-speed, 24s)
+      ease-in-out infinite;
+    box-shadow: 0 0 14px var(--color-accent-cyan-dim);
+    will-change: transform;
+  }
+
+  .aethel-fade-up {
+    animation: aethel-fade-up 700ms ease-out both;
+  }
+
+  .aethel-badge-hover {
+    transition:
+      transform 180ms ease,
+      color 180ms ease,
+      background-color 180ms ease,
+      box-shadow 180ms ease;
+  }
+
+  .aethel-badge-hover:hover {
+    color: var(--color-font-primary);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px -18px var(--color-accent-cyan);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .aethel-hero-glow,
+    .aethel-turbine,
+    .aethel-particle,
+    .aethel-fade-up {
+      animation: none;
+    }
+
+    .aethel-badge-hover,
+    .aethel-badge-hover:hover {
+      transform: none;
+    }
   }
 }
