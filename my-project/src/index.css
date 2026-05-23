@@ -174,7 +174,7 @@
 
   .aethel-signal-layer {
     z-index: -15;
-    opacity: 0.82;
+    opacity: 0.94;
     -webkit-mask-image: linear-gradient(
       to bottom,
       transparent 0%,
@@ -197,7 +197,7 @@
     top: var(--aethel-signal-top);
     display: block;
     width: var(--aethel-signal-width);
-    height: 1px;
+    height: 1.25px;
     opacity: 0;
     transform-origin: right center;
     animation: aethel-signal-shoot var(--aethel-signal-speed) ease-in-out
@@ -216,13 +216,13 @@
   .aethel-signal::before {
     right: 0;
     top: 50%;
-    width: var(--aethel-signal-dot);
-    height: var(--aethel-signal-dot);
+    width: calc(var(--aethel-signal-dot) * 1.65);
+    height: calc(var(--aethel-signal-dot) * 1.65);
     border-radius: 999px;
-    background: rgb(var(--aethel-signal-rgb) / 0.82);
+    background: rgb(var(--aethel-signal-rgb) / 0.92);
     box-shadow:
-      0 0 8px rgb(var(--aethel-signal-rgb) / 0.28),
-      0 0 18px rgb(var(--aethel-signal-rgb) / 0.16);
+      0 0 10px rgb(var(--aethel-signal-rgb) / 0.42),
+      0 0 24px rgb(var(--aethel-signal-rgb) / 0.22);
     transform: translate(50%, -50%);
   }
 
@@ -232,10 +232,10 @@
     background: linear-gradient(
       90deg,
       rgb(var(--aethel-signal-rgb) / 0) 0%,
-      rgb(var(--aethel-signal-rgb) / 0.08) 34%,
-      rgb(var(--aethel-signal-rgb) / 0.34) 100%
+      rgb(var(--aethel-signal-rgb) / 0.12) 34%,
+      rgb(var(--aethel-signal-rgb) / 0.42) 100%
     );
-    box-shadow: 0 0 12px rgb(var(--aethel-signal-rgb) / 0.12);
+    box-shadow: 0 0 14px rgb(var(--aethel-signal-rgb) / 0.16);
   }
 
   .aethel-fade-up {
