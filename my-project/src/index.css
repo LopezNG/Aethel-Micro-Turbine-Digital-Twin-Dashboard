@@ -81,6 +81,34 @@
   }
 }
 
+@keyframes aethel-signal-shoot {
+  0%,
+  10% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) rotate(var(--aethel-signal-angle))
+      scaleX(0.88);
+  }
+
+  18% {
+    opacity: var(--aethel-signal-opacity);
+  }
+
+  58% {
+    opacity: var(--aethel-signal-opacity);
+  }
+
+  70%,
+  100% {
+    opacity: 0;
+    transform: translate3d(
+        var(--aethel-signal-travel-x),
+        var(--aethel-signal-travel-y),
+        0
+      )
+      rotate(var(--aethel-signal-angle)) scaleX(1);
+  }
+}
+
 @keyframes pulse-dot {
   50% {
     opacity: 0.4;
@@ -144,6 +172,72 @@
     will-change: transform;
   }
 
+  .aethel-signal-layer {
+    z-index: -15;
+    opacity: 0.82;
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      transparent 0%,
+      #000 13%,
+      #000 86%,
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      to bottom,
+      transparent 0%,
+      #000 13%,
+      #000 86%,
+      transparent 100%
+    );
+  }
+
+  .aethel-signal {
+    position: absolute;
+    left: var(--aethel-signal-left);
+    top: var(--aethel-signal-top);
+    display: block;
+    width: var(--aethel-signal-width);
+    height: 1px;
+    opacity: 0;
+    transform-origin: right center;
+    animation: aethel-signal-shoot var(--aethel-signal-speed) ease-in-out
+      infinite;
+    animation-delay: var(--aethel-signal-delay);
+    will-change: opacity, transform;
+  }
+
+  .aethel-signal::before,
+  .aethel-signal::after {
+    position: absolute;
+    content: '';
+    pointer-events: none;
+  }
+
+  .aethel-signal::before {
+    right: 0;
+    top: 50%;
+    width: var(--aethel-signal-dot);
+    height: var(--aethel-signal-dot);
+    border-radius: 999px;
+    background: rgb(var(--aethel-signal-rgb) / 0.82);
+    box-shadow:
+      0 0 8px rgb(var(--aethel-signal-rgb) / 0.28),
+      0 0 18px rgb(var(--aethel-signal-rgb) / 0.16);
+    transform: translate(50%, -50%);
+  }
+
+  .aethel-signal::after {
+    inset: 0;
+    border-radius: 999px;
+    background: linear-gradient(
+      90deg,
+      rgb(var(--aethel-signal-rgb) / 0) 0%,
+      rgb(var(--aethel-signal-rgb) / 0.08) 34%,
+      rgb(var(--aethel-signal-rgb) / 0.34) 100%
+    );
+    box-shadow: 0 0 12px rgb(var(--aethel-signal-rgb) / 0.12);
+  }
+
   .aethel-fade-up {
     animation: aethel-fade-up 700ms ease-out both;
   }
@@ -162,12 +256,27 @@
     box-shadow: 0 10px 24px -18px var(--color-accent-cyan);
   }
 
+  @media (max-width: 720px) {
+    .aethel-signal-layer {
+      opacity: 0.52;
+    }
+
+    .aethel-signal:nth-child(n + 7) {
+      display: none;
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .aethel-hero-glow,
     .aethel-turbine,
     .aethel-particle,
+    .aethel-signal,
     .aethel-fade-up {
       animation: none;
+    }
+
+    .aethel-signal-layer {
+      display: none;
     }
 
     .aethel-badge-hover,

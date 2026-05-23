@@ -1,5 +1,6 @@
 import { Atom, Container, Flame, Zap } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { HeroSignalStreaks } from '@/components/hero/HeroSignalStreaks'
 import { Badge } from '@/components/ui'
 
 export default function Landing() {
@@ -21,6 +22,7 @@ export default function Landing() {
             'radial-gradient(circle, var(--color-accent-cyan-dim) 0%, transparent 70%)',
         }}
       />
+      <HeroSignalStreaks />
       <div
         aria-hidden="true"
         className="aethel-turbine pointer-events-none absolute left-1/2 top-1/2 -z-10 h-[min(90vw,700px)] w-[min(90vw,700px)] text-accent-cyan opacity-[0.06]"

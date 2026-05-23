@@ -1,0 +1,149 @@
+import type { CSSProperties } from 'react'
+
+type SignalStyle = CSSProperties & Record<`--${string}`, string | number>
+
+const signals: SignalStyle[] = [
+  {
+    '--aethel-signal-top': '7%',
+    '--aethel-signal-left': '-10%',
+    '--aethel-signal-width': '118px',
+    '--aethel-signal-dot': '3px',
+    '--aethel-signal-angle': '24deg',
+    '--aethel-signal-travel-x': '48vw',
+    '--aethel-signal-travel-y': '31vh',
+    '--aethel-signal-speed': '24s',
+    '--aethel-signal-delay': '-7s',
+    '--aethel-signal-opacity': 0.38,
+    '--aethel-signal-rgb': '0 245 255',
+  },
+  {
+    '--aethel-signal-top': '18%',
+    '--aethel-signal-left': '96%',
+    '--aethel-signal-width': '92px',
+    '--aethel-signal-dot': '2.5px',
+    '--aethel-signal-angle': '151deg',
+    '--aethel-signal-travel-x': '-44vw',
+    '--aethel-signal-travel-y': '26vh',
+    '--aethel-signal-speed': '29s',
+    '--aethel-signal-delay': '-18s',
+    '--aethel-signal-opacity': 0.32,
+    '--aethel-signal-rgb': '124 221 255',
+  },
+  {
+    '--aethel-signal-top': '29%',
+    '--aethel-signal-left': '-16%',
+    '--aethel-signal-width': '152px',
+    '--aethel-signal-dot': '3px',
+    '--aethel-signal-angle': '19deg',
+    '--aethel-signal-travel-x': '63vw',
+    '--aethel-signal-travel-y': '24vh',
+    '--aethel-signal-speed': '31s',
+    '--aethel-signal-delay': '-3s',
+    '--aethel-signal-opacity': 0.29,
+    '--aethel-signal-rgb': '16 211 214',
+  },
+  {
+    '--aethel-signal-top': '44%',
+    '--aethel-signal-left': '88%',
+    '--aethel-signal-width': '128px',
+    '--aethel-signal-dot': '3px',
+    '--aethel-signal-angle': '158deg',
+    '--aethel-signal-travel-x': '-54vw',
+    '--aethel-signal-travel-y': '34vh',
+    '--aethel-signal-speed': '27s',
+    '--aethel-signal-delay': '-12s',
+    '--aethel-signal-opacity': 0.34,
+    '--aethel-signal-rgb': '214 252 255',
+  },
+  {
+    '--aethel-signal-top': '61%',
+    '--aethel-signal-left': '-8%',
+    '--aethel-signal-width': '104px',
+    '--aethel-signal-dot': '2.5px',
+    '--aethel-signal-angle': '27deg',
+    '--aethel-signal-travel-x': '42vw',
+    '--aethel-signal-travel-y': '21vh',
+    '--aethel-signal-speed': '22s',
+    '--aethel-signal-delay': '-15s',
+    '--aethel-signal-opacity': 0.27,
+    '--aethel-signal-rgb': '0 245 255',
+  },
+  {
+    '--aethel-signal-top': '72%',
+    '--aethel-signal-left': '78%',
+    '--aethel-signal-width': '86px',
+    '--aethel-signal-dot': '2px',
+    '--aethel-signal-angle': '149deg',
+    '--aethel-signal-travel-x': '-32vw',
+    '--aethel-signal-travel-y': '18vh',
+    '--aethel-signal-speed': '26s',
+    '--aethel-signal-delay': '-21s',
+    '--aethel-signal-opacity': 0.25,
+    '--aethel-signal-rgb': '125 255 245',
+  },
+  {
+    '--aethel-signal-top': '3%',
+    '--aethel-signal-left': '35%',
+    '--aethel-signal-width': '74px',
+    '--aethel-signal-dot': '2px',
+    '--aethel-signal-angle': '33deg',
+    '--aethel-signal-travel-x': '27vw',
+    '--aethel-signal-travel-y': '29vh',
+    '--aethel-signal-speed': '19s',
+    '--aethel-signal-delay': '-10s',
+    '--aethel-signal-opacity': 0.22,
+    '--aethel-signal-rgb': '255 255 255',
+  },
+  {
+    '--aethel-signal-top': '81%',
+    '--aethel-signal-left': '15%',
+    '--aethel-signal-width': '132px',
+    '--aethel-signal-dot': '3px',
+    '--aethel-signal-angle': '-20deg',
+    '--aethel-signal-travel-x': '41vw',
+    '--aethel-signal-travel-y': '-18vh',
+    '--aethel-signal-speed': '34s',
+    '--aethel-signal-delay': '-25s',
+    '--aethel-signal-opacity': 0.24,
+    '--aethel-signal-rgb': '0 245 255',
+  },
+  {
+    '--aethel-signal-top': '9%',
+    '--aethel-signal-left': '72%',
+    '--aethel-signal-width': '112px',
+    '--aethel-signal-dot': '2.5px',
+    '--aethel-signal-angle': '144deg',
+    '--aethel-signal-travel-x': '-38vw',
+    '--aethel-signal-travel-y': '22vh',
+    '--aethel-signal-speed': '28s',
+    '--aethel-signal-delay': '-1s',
+    '--aethel-signal-opacity': 0.26,
+    '--aethel-signal-rgb': '124 221 255',
+  },
+  {
+    '--aethel-signal-top': '52%',
+    '--aethel-signal-left': '24%',
+    '--aethel-signal-width': '66px',
+    '--aethel-signal-dot': '2px',
+    '--aethel-signal-angle': '23deg',
+    '--aethel-signal-travel-x': '24vw',
+    '--aethel-signal-travel-y': '13vh',
+    '--aethel-signal-speed': '21s',
+    '--aethel-signal-delay': '-5s',
+    '--aethel-signal-opacity': 0.2,
+    '--aethel-signal-rgb': '255 255 255',
+  },
+]
+
+export function HeroSignalStreaks() {
+  return (
+    <div
+      aria-hidden="true"
+      className="aethel-signal-layer pointer-events-none absolute inset-0 overflow-hidden"
+    >
+      {signals.map((signal, index) => (
+        <span key={index} className="aethel-signal" style={signal} />
+      ))}
+    </div>
+  )
+}
