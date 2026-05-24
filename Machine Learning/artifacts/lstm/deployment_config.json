@@ -1,0 +1,51 @@
+{
+  "model_class": "AethelLSTM",
+  "feature_columns": [
+    "input_voltage"
+  ],
+  "target_column": "el_power",
+  "time_column": "time",
+  "lookback_steps": 30,
+  "lookback_seconds": 30.0,
+  "median_dt_seconds": 1.0,
+  "hidden_size": 96,
+  "num_lstm_layers": 2,
+  "dropout_rate": 0.2,
+  "scaler_kind": "standard",
+  "voltage_step_threshold": 0.05,
+  "transition_window_steps": 30,
+  "train_experiments": [
+    "ex_1",
+    "ex_9",
+    "ex_20",
+    "ex_21",
+    "ex_23",
+    "ex_24"
+  ],
+  "validation_experiments": [
+    "ex_4",
+    "ex_22"
+  ],
+  "global_validation_metrics": {
+    "rmse": 337.3671294196604,
+    "mae": 184.4786376953125,
+    "r2": 0.8260011076927185
+  },
+  "regime_validation_metrics": [
+    {
+      "phase": "Transition",
+      "samples": 4464,
+      "rmse": 202.29362096204406,
+      "mae": 148.51898193359375,
+      "r2": 0.920021116733551
+    },
+    {
+      "phase": "Stationary",
+      "samples": 13763,
+      "rmse": 370.755381875848,
+      "mae": 196.14208984375,
+      "r2": 0.7916750311851501
+    }
+  ],
+  "random_seed": 42
+}
