@@ -1,0 +1,6 @@
+.git
+my-project/node_modules
+my-project/dist
+my-project/.vite
+**/__pycache__
+**/*.pyc

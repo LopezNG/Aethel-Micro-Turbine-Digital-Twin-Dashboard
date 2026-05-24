@@ -1,0 +1,1 @@
+"""Aethel FastAPI backend package."""

@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useTopbar } from '@/components/layout/Layout'
+import { useTopbar } from '@/components/layout/TopbarContext'
 import {
   ExperimentCard,
   KPITile,

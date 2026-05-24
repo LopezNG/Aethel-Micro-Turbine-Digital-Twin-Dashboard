@@ -1,0 +1,8 @@
+backend/.uvicorn.*.log
+my-project/.vite.*.log
+my-project/dist
+my-project/node_modules
+**/__pycache__
+**/*.pyc
+.env
+.env.*

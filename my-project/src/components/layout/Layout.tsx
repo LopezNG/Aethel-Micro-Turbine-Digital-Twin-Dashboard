@@ -1,32 +1,18 @@
 import {
-  createContext,
   useCallback,
-  useContext,
-  useEffect,
   useMemo,
   useState,
-  type ReactNode,
 } from 'react'
 import { Outlet } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
 import { Topbar } from './Topbar'
+import { TopbarContext, type TopbarContextValue, type TopbarSlots } from './TopbarContext'
 import { LiveIndicator } from '@/components/ui/LiveIndicator'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { usePersistentState } from '@/hooks/usePersistentState'
 import { cn } from '@/lib/cn'
 
 const SIDEBAR_KEY = 'aethel-sidebar-collapsed'
-
-type TopbarSlots = {
-  left: ReactNode
-  right: ReactNode
-}
-
-type TopbarContextValue = {
-  setTopbar: (slots: Partial<TopbarSlots>) => void
-}
-
-const TopbarContext = createContext<TopbarContextValue | null>(null)
 
 type LayoutProps = {
   /** Default `collapsed` state when no localStorage value is present. */
@@ -44,6 +30,7 @@ export function Layout({ defaultCollapsed = false }: LayoutProps) {
     left: null,
     right: <LiveIndicator />,
   })
+  const effectiveMobileOpen = isMobile && mobileOpen
 
   const setTopbar = useCallback((next: Partial<TopbarSlots>) => {
     setSlots((prev) => ({ ...prev, ...next }))
@@ -57,11 +44,6 @@ export function Layout({ defaultCollapsed = false }: LayoutProps) {
     }
   }, [isMobile, setIsCollapsed])
 
-  // Close mobile drawer when crossing the breakpoint upward.
-  useEffect(() => {
-    if (!isMobile) setMobileOpen(false)
-  }, [isMobile])
-
   const contextValue = useMemo<TopbarContextValue>(() => ({ setTopbar }), [setTopbar])
 
   return (
@@ -70,7 +52,7 @@ export function Layout({ defaultCollapsed = false }: LayoutProps) {
         <Sidebar
           isCollapsed={isCollapsed}
           setIsCollapsed={setIsCollapsed}
-          mobileOpen={mobileOpen}
+          mobileOpen={effectiveMobileOpen}
           onMobileClose={() => setMobileOpen(false)}
         />
 
@@ -79,7 +61,7 @@ export function Layout({ defaultCollapsed = false }: LayoutProps) {
           onClick={() => setMobileOpen(false)}
           className={cn(
             'fixed inset-0 z-[55] bg-black/50 transition-opacity duration-200 lg:hidden',
-            mobileOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0',
+            effectiveMobileOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0',
           )}
         />
 
@@ -94,16 +76,4 @@ export function Layout({ defaultCollapsed = false }: LayoutProps) {
       </div>
     </TopbarContext.Provider>
   )
-}
-
-/**
- * Pages call this once (in an effect) to publish their topbar slots.
- * Returns a stable setter; pass `null` to clear a slot.
- */
-export function useTopbar(): TopbarContextValue['setTopbar'] {
-  const ctx = useContext(TopbarContext)
-  if (!ctx) {
-    throw new Error('useTopbar must be used inside <Layout>')
-  }
-  return ctx.setTopbar
 }
