@@ -171,7 +171,7 @@ export function ZeroShotSandbox({
       </header>
 
       <div className="mt-5 grid min-h-0 flex-1 grid-cols-1 gap-5 min-[1180px]:grid-cols-[360px_minmax(0,1fr)]">
-        <article className="flex min-h-0 flex-col rounded-lg border border-white/10 bg-black/20 p-4">
+        <article className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-lg border border-white/10 bg-black/20 p-4">
           <div className="flex items-center justify-between gap-3">
             <h3 className="text-sm font-semibold text-font-primary">Input Array</h3>
             <button
@@ -184,9 +184,9 @@ export function ZeroShotSandbox({
             </button>
           </div>
 
-          <div className="mt-4 flex flex-1 flex-col gap-3 overflow-auto pr-1">
+          <div className="mt-4 flex flex-1 flex-col gap-3 overflow-y-auto overflow-x-hidden pr-1">
             {steps.map((step, index) => (
-              <div key={step.id} className="rounded-lg border border-white/10 bg-bg-deep/60 p-3">
+              <div key={step.id} className="min-w-0 rounded-lg border border-white/10 bg-bg-deep/60 p-3">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <span className="font-mono text-xs text-font-tertiary">#{index + 1}</span>
                   <button
@@ -200,8 +200,8 @@ export function ZeroShotSandbox({
                   </button>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <label className="grid gap-2">
+                <div className="grid grid-cols-1 gap-3 min-[440px]:grid-cols-2">
+                  <label className="grid min-w-0 gap-2">
                     <span className="flex items-center gap-1.5 text-xs text-font-secondary">
                       <Gauge className="h-3.5 w-3.5 text-accent-orange" />
                       Voltage
@@ -213,10 +213,10 @@ export function ZeroShotSandbox({
                       step={0.1}
                       value={step.voltage}
                       onChange={(event) => updateStep(step.id, 'voltage', Number(event.target.value))}
-                      className="h-10 rounded-md border border-white/10 bg-surface-solid px-3 font-mono text-sm text-font-primary outline-none transition focus:border-accent-cyan/50"
+                      className="h-10 min-w-0 rounded-md border border-white/10 bg-surface-solid px-3 font-mono text-sm text-font-primary outline-none transition focus:border-accent-cyan/50"
                     />
                   </label>
-                  <label className="grid gap-2">
+                  <label className="grid min-w-0 gap-2">
                     <span className="flex items-center gap-1.5 text-xs text-font-secondary">
                       <Clock3 className="h-3.5 w-3.5 text-accent-green" />
                       Seconds
@@ -227,7 +227,7 @@ export function ZeroShotSandbox({
                       step={1}
                       value={step.seconds}
                       onChange={(event) => updateStep(step.id, 'seconds', Number(event.target.value))}
-                      className="h-10 rounded-md border border-white/10 bg-surface-solid px-3 font-mono text-sm text-font-primary outline-none transition focus:border-accent-cyan/50"
+                      className="h-10 min-w-0 rounded-md border border-white/10 bg-surface-solid px-3 font-mono text-sm text-font-primary outline-none transition focus:border-accent-cyan/50"
                     />
                   </label>
                 </div>
