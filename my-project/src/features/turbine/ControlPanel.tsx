@@ -11,6 +11,10 @@ import { cn } from '@/lib/cn'
 import type {
   ConnectionStatus,
   DatasetId,
+  ExperimentMetadata,
+  ExperimentMode,
+  FilterMode,
+  ModelInfo,
   ModelVersion,
   SimulationMode,
   TelemetryPoint,
@@ -21,6 +25,11 @@ type ControlPanelProps = {
   modelVersion: ModelVersion
   manualVoltage: number
   dataset: DatasetId
+  experiments: ExperimentMetadata[]
+  models: ModelInfo[]
+  experimentMode: ExperimentMode | 'all'
+  includeUnknown: boolean
+  filterMode: FilterMode
   tickMs: number
   paused: boolean
   status: ConnectionStatus
@@ -29,6 +38,9 @@ type ControlPanelProps = {
   onModelChange: (model: ModelVersion) => void
   onVoltageChange: (voltage: number) => void
   onDatasetChange: (dataset: DatasetId) => void
+  onExperimentModeChange: (mode: ExperimentMode | 'all') => void
+  onIncludeUnknownChange: (includeUnknown: boolean) => void
+  onFilterModeChange: (filterMode: FilterMode) => void
   onTickMsChange: (tickMs: number) => void
   onPausedChange: (paused: boolean) => void
 }
@@ -39,6 +51,11 @@ const statusTone: Record<ConnectionStatus, string> = {
   closed: 'text-font-secondary',
   error: 'text-accent-orange',
 }
+
+const fallbackModels: Array<{ id: ModelVersion; label: string }> = [
+  { id: 'baseline', label: 'Baseline' },
+  { id: 'lstm', label: 'LSTM' },
+]
 
 function SegmentButton<T extends string>({
   active,
@@ -72,6 +89,11 @@ export function ControlPanel({
   modelVersion,
   manualVoltage,
   dataset,
+  experiments,
+  models,
+  experimentMode,
+  includeUnknown,
+  filterMode,
   tickMs,
   paused,
   status,
@@ -80,6 +102,9 @@ export function ControlPanel({
   onModelChange,
   onVoltageChange,
   onDatasetChange,
+  onExperimentModeChange,
+  onIncludeUnknownChange,
+  onFilterModeChange,
   onTickMsChange,
   onPausedChange,
 }: ControlPanelProps) {
@@ -118,14 +143,42 @@ export function ControlPanel({
       </section>
 
       <section className="grid grid-cols-2 gap-2 rounded-lg border border-white/10 bg-black/20 p-1">
-        <SegmentButton
-          active={modelVersion === 'baseline'}
-          value="baseline"
-          label="Baseline"
-          onSelect={onModelChange}
-        />
-        <SegmentButton active={modelVersion === 'lstm'} value="lstm" label="LSTM" onSelect={onModelChange} />
+        {(models.length ? models : fallbackModels).map((model) => (
+          <SegmentButton
+            key={model.id}
+            active={modelVersion === model.id}
+            value={model.id}
+            label={model.label}
+            onSelect={onModelChange}
+          />
+        ))}
       </section>
+
+      <section className="grid grid-cols-3 gap-1 rounded-lg border border-white/10 bg-black/20 p-1">
+        <SegmentButton active={experimentMode === 'all'} value="all" label="All" onSelect={onExperimentModeChange} />
+        <SegmentButton
+          active={experimentMode === 'rectangular'}
+          value="rectangular"
+          label="Rect."
+          onSelect={onExperimentModeChange}
+        />
+        <SegmentButton
+          active={experimentMode === 'continuous'}
+          value="continuous"
+          label="Cont."
+          onSelect={onExperimentModeChange}
+        />
+      </section>
+
+      <label className="flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-font-secondary">
+        <span>Include unknown experiment modes</span>
+        <input
+          type="checkbox"
+          checked={includeUnknown}
+          onChange={(event) => onIncludeUnknownChange(event.target.checked)}
+          className="h-4 w-4 accent-cyan-300"
+        />
+      </label>
 
       <section className="flex flex-col items-center gap-4 rounded-lg border border-white/10 bg-[radial-gradient(circle_at_50%_18%,rgba(0,245,255,0.12),transparent_42%),rgba(0,0,0,0.22)] p-5">
         <div
@@ -175,8 +228,11 @@ export function ControlPanel({
             onChange={(event) => onDatasetChange(event.target.value as DatasetId)}
             className="h-9 rounded-md border border-white/10 bg-surface-solid px-2 text-sm text-font-primary outline-none transition focus:border-accent-cyan/50"
           >
-            <option value="ex_22">ex_22</option>
-            <option value="ex_9">ex_9</option>
+            {experiments.map((experiment) => (
+              <option key={experiment.experiment_id} value={experiment.experiment_id}>
+                {experiment.experiment_id} · {experiment.split} · {experiment.mode}
+              </option>
+            ))}
           </select>
         </label>
 
@@ -197,6 +253,23 @@ export function ControlPanel({
           </select>
         </label>
       </section>
+
+      <label className="flex min-w-0 flex-col gap-2 rounded-lg border border-white/10 bg-black/20 p-3">
+        <span className="flex items-center gap-2 text-xs font-medium text-font-secondary">
+          <SlidersHorizontal className="h-3.5 w-3.5 text-accent-cyan" />
+          Signal Filter
+        </span>
+        <select
+          value={filterMode}
+          onChange={(event) => onFilterModeChange(event.target.value as FilterMode)}
+          className="h-9 rounded-md border border-white/10 bg-surface-solid px-2 text-sm text-font-primary outline-none transition focus:border-accent-cyan/50"
+        >
+          <option value="none">No Filter</option>
+          <option value="voltage">Voltage Filter</option>
+          <option value="power">Power Filter</option>
+          <option value="both">Voltage + Power Filter</option>
+        </select>
+      </label>
 
       <footer className="grid grid-cols-3 gap-2 border-t border-white/10 pt-4 font-mono text-xs">
         <div>

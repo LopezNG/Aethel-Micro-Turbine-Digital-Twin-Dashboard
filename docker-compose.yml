@@ -6,7 +6,8 @@ services:
     environment:
       AETHEL_CORS_ORIGINS: http://localhost:5173,http://127.0.0.1:5173,http://localhost:4173,http://127.0.0.1:4173,http://localhost:8080,http://127.0.0.1:8080
       AETHEL_DATA_DIR: /app/Machine Learning/micro gas turbine electrical energy prediction dataset
-      AETHEL_MODEL_PATH: /app/Machine Learning/best_final_model_pipeline.joblib
+      AETHEL_LSTM_ARTIFACT_DIR: /app/Machine Learning/artifacts/lstm
+      AETHEL_REPORTS_DIR: /app/reports
     ports:
       - "8000:8000"
     healthcheck:

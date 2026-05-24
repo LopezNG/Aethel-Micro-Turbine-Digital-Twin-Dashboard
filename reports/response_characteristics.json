@@ -1,0 +1,646 @@
+{
+  "ex_4": {
+    "baseline": {
+      "experiment_id": "ex_4",
+      "model": "baseline",
+      "available": true,
+      "reason": null,
+      "steps": [
+        {
+          "step_time": 1824.67481533593,
+          "from_voltage": 3.0,
+          "to_voltage": 5.0,
+          "actual": {
+            "rise_time_seconds": 47.96621565429996,
+            "settling_time_seconds": null,
+            "overshoot_percent": 25.616333147119473,
+            "peak_response_kw": 1.7009092351009398,
+            "final_steady_state_kw": 1.616476127679725
+          },
+          "predicted": {
+            "rise_time_seconds": 0.0,
+            "settling_time_seconds": 0.0,
+            "overshoot_percent": 0.0,
+            "peak_response_kw": 1.7168393212369322,
+            "final_steady_state_kw": 1.7168393212369322
+          }
+        },
+        {
+          "step_time": 3048.81261068003,
+          "from_voltage": 5.0,
+          "to_voltage": 3.0,
+          "actual": {
+            "rise_time_seconds": 59.95776956787995,
+            "settling_time_seconds": 1215.1441299089302,
+            "overshoot_percent": 11.489440396300436,
+            "peak_response_kw": 1.14457362997119,
+            "final_steady_state_kw": 1.19320510216277
+          },
+          "predicted": {
+            "rise_time_seconds": 0.0,
+            "settling_time_seconds": 0.0,
+            "overshoot_percent": -0.0,
+            "peak_response_kw": 1.2164704943454612,
+            "final_steady_state_kw": 1.2164704943454612
+          }
+        },
+        {
+          "step_time": 4264.95603674842,
+          "from_voltage": 3.0,
+          "to_voltage": 7.5,
+          "actual": {
+            "rise_time_seconds": 177.87471638470015,
+            "settling_time_seconds": 814.4263699636303,
+            "overshoot_percent": 9.023256973986436,
+            "peak_response_kw": 2.60653426480078,
+            "final_steady_state_kw": 2.4895607622906253
+          },
+          "predicted": {
+            "rise_time_seconds": 0.0,
+            "settling_time_seconds": 0.0,
+            "overshoot_percent": 0.0,
+            "peak_response_kw": 2.3423003548512713,
+            "final_steady_state_kw": 2.3423003548512713
+          }
+        },
+        {
+          "step_time": 5485.09664745466,
+          "from_voltage": 7.5,
+          "to_voltage": 3.0,
+          "actual": {
+            "rise_time_seconds": 175.87612406577045,
+            "settling_time_seconds": 367.7409866829694,
+            "overshoot_percent": 5.57124386626665,
+            "peak_response_kw": 1.12626016307226,
+            "final_steady_state_kw": 1.198204755397935
+          },
+          "predicted": {
+            "rise_time_seconds": 0.0,
+            "settling_time_seconds": 0.0,
+            "overshoot_percent": -0.0,
+            "peak_response_kw": 1.2164704943454612,
+            "final_steady_state_kw": 1.2164704943454612
+          }
+        },
+        {
+          "step_time": 6705.23725816091,
+          "from_voltage": 3.0,
+          "to_voltage": 10.0,
+          "actual": {
+            "rise_time_seconds": 287.79729392578975,
+            "settling_time_seconds": 362.74450588564014,
+            "overshoot_percent": 3.8328439981245985,
+            "peak_response_kw": 3.39322856611123,
+            "final_steady_state_kw": 3.31220233669595
+          },
+          "predicted": {
+            "rise_time_seconds": 0.0,
+            "settling_time_seconds": 0.0,
+            "overshoot_percent": 0.0,
+            "peak_response_kw": 2.9677613884656098,
+            "final_steady_state_kw": 2.9677613884656098
+          }
+        },
+        {
+          "step_time": 7919.38209191037,
+          "from_voltage": 10.0,
+          "to_voltage": 3.0,
+          "actual": {
+            "rise_time_seconds": 308.7825132745611,
+            "settling_time_seconds": 396.7205753074295,
+            "overshoot_percent": 3.5019658002520493,
+            "peak_response_kw": 1.10952285336178,
+            "final_steady_state_kw": 1.184077518420915
+          },
+          "predicted": {
+            "rise_time_seconds": 0.0,
+            "settling_time_seconds": 0.0,
+            "overshoot_percent": -0.0,
+            "peak_response_kw": 1.2164704943454612,
+            "final_steady_state_kw": 1.2164704943454612
+          }
+        },
+        {
+          "step_time": 9137.52411029768,
+          "from_voltage": 3.0,
+          "to_voltage": 10.0,
+          "actual": {
+            "rise_time_seconds": 290.7951824041902,
+            "settling_time_seconds": 696.5094231468101,
+            "overshoot_percent": 3.177823784960062,
+            "peak_response_kw": 3.3783645190198,
+            "final_steady_state_kw": 3.3107816105445753
+          },
+          "predicted": {
+            "rise_time_seconds": 0.0,
+            "settling_time_seconds": 0.0,
+            "overshoot_percent": 0.0,
+            "peak_response_kw": 2.9677613884656098,
+            "final_steady_state_kw": 2.9677613884656098
+          }
+        },
+        {
+          "step_time": 10352.6682402066,
+          "from_voltage": 10.0,
+          "to_voltage": 3.0,
+          "actual": {
+            "rise_time_seconds": 97.93102362759964,
+            "settling_time_seconds": 118.91624297630005,
+            "overshoot_percent": 12.628307807553032,
+            "peak_response_kw": 2.76128915021732,
+            "final_steady_state_kw": 2.8230563597441147
+          },
+          "predicted": {
+            "rise_time_seconds": 0.0,
+            "settling_time_seconds": 0.0,
+            "overshoot_percent": -0.0,
+            "peak_response_kw": 1.2164704943454612,
+            "final_steady_state_kw": 1.2164704943454612
+          }
+        }
+      ]
+    },
+    "lstm": {
+      "experiment_id": "ex_4",
+      "model": "lstm",
+      "available": true,
+      "reason": null,
+      "steps": [
+        {
+          "step_time": 1824.67481533593,
+          "from_voltage": 3.0,
+          "to_voltage": 5.0,
+          "actual": {
+            "rise_time_seconds": 47.96621565429996,
+            "settling_time_seconds": null,
+            "overshoot_percent": 25.616333147119473,
+            "peak_response_kw": 1.7009092351009398,
+            "final_steady_state_kw": 1.616476127679725
+          },
+          "predicted": {
+            "rise_time_seconds": 24.982403986620056,
+            "settling_time_seconds": 26.980996305550207,
+            "overshoot_percent": 1.5907275268286274,
+            "peak_response_kw": 1.558683349609375,
+            "final_steady_state_kw": 1.5536883544921876
+          }
+        },
+        {
+          "step_time": 3048.81261068003,
+          "from_voltage": 5.0,
+          "to_voltage": 3.0,
+          "actual": {
+            "rise_time_seconds": 59.95776956787995,
+            "settling_time_seconds": 1215.1441299089302,
+            "overshoot_percent": 11.489440396300436,
+            "peak_response_kw": 1.14457362997119,
+            "final_steady_state_kw": 1.19320510216277
+          },
+          "predicted": {
+            "rise_time_seconds": 26.980996305539975,
+            "settling_time_seconds": 27.980292465009825,
+            "overshoot_percent": -0.0,
+            "peak_response_kw": 1.239681396484375,
+            "final_steady_state_kw": 1.239681396484375
+          }
+        },
+        {
+          "step_time": 4264.95603674842,
+          "from_voltage": 3.0,
+          "to_voltage": 7.5,
+          "actual": {
+            "rise_time_seconds": 177.87471638470015,
+            "settling_time_seconds": 814.4263699636303,
+            "overshoot_percent": 9.023256973986436,
+            "peak_response_kw": 2.60653426480078,
+            "final_steady_state_kw": 2.4895607622906253
+          },
+          "predicted": {
+            "rise_time_seconds": 0.0,
+            "settling_time_seconds": 28.979588624470125,
+            "overshoot_percent": 5.290656508549587,
+            "peak_response_kw": 2.4025244140625,
+            "final_steady_state_kw": 2.34409375
+          }
+        },
+        {
+          "step_time": 5485.09664745466,
+          "from_voltage": 7.5,
+          "to_voltage": 3.0,
+          "actual": {
+            "rise_time_seconds": 175.87612406577045,
+            "settling_time_seconds": 367.7409866829694,
+            "overshoot_percent": 5.57124386626665,
+            "peak_response_kw": 1.12626016307226,
+            "final_steady_state_kw": 1.198204755397935
+          },
+          "predicted": {
+            "rise_time_seconds": 12.990850073039837,
+            "settling_time_seconds": 28.97958862447922,
+            "overshoot_percent": -0.0,
+            "peak_response_kw": 1.239681396484375,
+            "final_steady_state_kw": 1.239681396484375
+          }
+        },
+        {
+          "step_time": 6705.23725816091,
+          "from_voltage": 3.0,
+          "to_voltage": 10.0,
+          "actual": {
+            "rise_time_seconds": 287.79729392578975,
+            "settling_time_seconds": 362.74450588564014,
+            "overshoot_percent": 3.8328439981245985,
+            "peak_response_kw": 3.39322856611123,
+            "final_steady_state_kw": 3.31220233669595
+          },
+          "predicted": {
+            "rise_time_seconds": 0.0,
+            "settling_time_seconds": 27.98029246501028,
+            "overshoot_percent": 0.0,
+            "peak_response_kw": 3.05436328125,
+            "final_steady_state_kw": 3.05436328125
+          }
+        },
+        {
+          "step_time": 7919.38209191037,
+          "from_voltage": 10.0,
+          "to_voltage": 3.0,
+          "actual": {
+            "rise_time_seconds": 308.7825132745611,
+            "settling_time_seconds": 396.7205753074295,
+            "overshoot_percent": 3.5019658002520493,
+            "peak_response_kw": 1.10952285336178,
+            "final_steady_state_kw": 1.184077518420915
+          },
+          "predicted": {
+            "rise_time_seconds": 0.9992961594598455,
+            "settling_time_seconds": 28.979588624470125,
+            "overshoot_percent": -0.0,
+            "peak_response_kw": 1.239681396484375,
+            "final_steady_state_kw": 1.239681396484375
+          }
+        },
+        {
+          "step_time": 9137.52411029768,
+          "from_voltage": 3.0,
+          "to_voltage": 10.0,
+          "actual": {
+            "rise_time_seconds": 290.7951824041902,
+            "settling_time_seconds": 696.5094231468101,
+            "overshoot_percent": 3.177823784960062,
+            "peak_response_kw": 3.3783645190198,
+            "final_steady_state_kw": 3.3107816105445753
+          },
+          "predicted": {
+            "rise_time_seconds": 0.0,
+            "settling_time_seconds": 27.98029246501028,
+            "overshoot_percent": 0.0,
+            "peak_response_kw": 3.05436328125,
+            "final_steady_state_kw": 3.05436328125
+          }
+        },
+        {
+          "step_time": 10352.6682402066,
+          "from_voltage": 10.0,
+          "to_voltage": 3.0,
+          "actual": {
+            "rise_time_seconds": 97.93102362759964,
+            "settling_time_seconds": 118.91624297630005,
+            "overshoot_percent": 12.628307807553032,
+            "peak_response_kw": 2.76128915021732,
+            "final_steady_state_kw": 2.8230563597441147
+          },
+          "predicted": {
+            "rise_time_seconds": 0.9992961594998633,
+            "settling_time_seconds": 28.97958862449923,
+            "overshoot_percent": -0.0,
+            "peak_response_kw": 1.239681396484375,
+            "final_steady_state_kw": 1.239681396484375
+          }
+        }
+      ]
+    }
+  },
+  "ex_22": {
+    "baseline": {
+      "experiment_id": "ex_22",
+      "model": "baseline",
+      "available": true,
+      "reason": null,
+      "steps": [
+        {
+          "step_time": 2750.04,
+          "from_voltage": 3.0,
+          "to_voltage": 3.61009019923361,
+          "actual": {
+            "rise_time_seconds": 4.260000000000218,
+            "settling_time_seconds": 48.659999999999854,
+            "overshoot_percent": 94.75078492483398,
+            "peak_response_kw": 1.40090589622802,
+            "final_steady_state_kw": 1.3198751375800901
+          },
+          "predicted": {
+            "rise_time_seconds": 0.0,
+            "settling_time_seconds": 0.0,
+            "overshoot_percent": 0.0,
+            "peak_response_kw": 1.369105552989714,
+            "final_steady_state_kw": 1.369105552989714
+          }
+        },
+        {
+          "step_time": 2799.76,
+          "from_voltage": 3.61009019923361,
+          "to_voltage": 4.21553724366851,
+          "actual": {
+            "rise_time_seconds": 21.139999999999873,
+            "settling_time_seconds": null,
+            "overshoot_percent": 25.395665327384005,
+            "peak_response_kw": 1.51490828957156,
+            "final_steady_state_kw": 1.4830482898225301
+          },
+          "predicted": {
+            "rise_time_seconds": 0.0,
+            "settling_time_seconds": 0.0,
+            "overshoot_percent": 0.0,
+            "peak_response_kw": 1.5205789666741134,
+            "final_steady_state_kw": 1.5205789666741134
+          }
+        },
+        {
+          "step_time": 2849.7,
+          "from_voltage": 4.21553724366851,
+          "to_voltage": 4.81173331571765,
+          "actual": {
+            "rise_time_seconds": 34.98000000000002,
+            "settling_time_seconds": null,
+            "overshoot_percent": 14.369601601816465,
+            "peak_response_kw": 1.6532034656789698,
+            "final_steady_state_kw": 1.6298237235774
+          },
+          "predicted": {
+            "rise_time_seconds": 0.0,
+            "settling_time_seconds": 0.0,
+            "overshoot_percent": 0.0,
+            "peak_response_kw": 1.6697379312583789,
+            "final_steady_state_kw": 1.6697379312583789
+          }
+        },
+        {
+          "step_time": 2899.6,
+          "from_voltage": 4.81173331571765,
+          "to_voltage": 5.39414100327968,
+          "actual": {
+            "rise_time_seconds": 24.079999999999927,
+            "settling_time_seconds": null,
+            "overshoot_percent": 31.931521413359647,
+            "peak_response_kw": 1.7681050401622,
+            "final_steady_state_kw": 1.7285094013139801
+          },
+          "predicted": {
+            "rise_time_seconds": 0.0,
+            "settling_time_seconds": 0.0,
+            "overshoot_percent": 0.0,
+            "peak_response_kw": 1.8154472569573727,
+            "final_steady_state_kw": 1.8154472569573727
+          }
+        },
+        {
+          "step_time": 2949.78,
+          "from_voltage": 5.39414100327968,
+          "to_voltage": 5.9583278321849,
+          "actual": {
+            "rise_time_seconds": 30.960000000000036,
+            "settling_time_seconds": 48.5,
+            "overshoot_percent": 36.84741931834828,
+            "peak_response_kw": 2.02340190244318,
+            "final_steady_state_kw": 1.93743008041748
+          },
+          "predicted": {
+            "rise_time_seconds": 0.0,
+            "settling_time_seconds": 0.0,
+            "overshoot_percent": 0.0,
+            "peak_response_kw": 1.9565980078208347,
+            "final_steady_state_kw": 1.9565980078208347
+          }
+        },
+        {
+          "step_time": 2999.46,
+          "from_voltage": 5.9583278321849,
+          "to_voltage": 6.5,
+          "actual": {
+            "rise_time_seconds": 35.840000000000146,
+            "settling_time_seconds": null,
+            "overshoot_percent": 30.363015333541306,
+            "peak_response_kw": 2.2679066939691404,
+            "final_steady_state_kw": 2.1960560425695
+          },
+          "predicted": {
+            "rise_time_seconds": 0.0,
+            "settling_time_seconds": 0.0,
+            "overshoot_percent": 0.0,
+            "peak_response_kw": 2.0921159414055355,
+            "final_steady_state_kw": 2.0921159414055355
+          }
+        },
+        {
+          "step_time": 3049.72,
+          "from_voltage": 6.5,
+          "to_voltage": 7.01503505445732,
+          "actual": {
+            "rise_time_seconds": 68.78000000000065,
+            "settling_time_seconds": null,
+            "overshoot_percent": 20.015164684986743,
+            "peak_response_kw": 1.78512655163344,
+            "final_steady_state_kw": 1.8544117467032448
+          },
+          "predicted": {
+            "rise_time_seconds": 0.0,
+            "settling_time_seconds": 1100.3800000000006,
+            "overshoot_percent": 579.5653945706413,
+            "peak_response_kw": 2.9677613884656098,
+            "final_steady_state_kw": 2.2209696844089324
+          }
+        },
+        {
+          "step_time": 4200.16,
+          "from_voltage": 7.01503505445732,
+          "to_voltage": 6.5,
+          "actual": {
+            "rise_time_seconds": 28.61999999999989,
+            "settling_time_seconds": 48.279999999999745,
+            "overshoot_percent": 34.6977777484185,
+            "peak_response_kw": 1.5436026155100602,
+            "final_steady_state_kw": 1.62083673590496
+          },
+          "predicted": {
+            "rise_time_seconds": 0.0,
+            "settling_time_seconds": 0.0,
+            "overshoot_percent": -0.0,
+            "peak_response_kw": 2.0921159414055355,
+            "final_steady_state_kw": 2.0921159414055355
+          }
+        }
+      ]
+    },
+    "lstm": {
+      "experiment_id": "ex_22",
+      "model": "lstm",
+      "available": true,
+      "reason": null,
+      "steps": [
+        {
+          "step_time": 2750.04,
+          "from_voltage": 3.0,
+          "to_voltage": 3.61009019923361,
+          "actual": {
+            "rise_time_seconds": 4.260000000000218,
+            "settling_time_seconds": 48.659999999999854,
+            "overshoot_percent": 94.75078492483398,
+            "peak_response_kw": 1.40090589622802,
+            "final_steady_state_kw": 1.3198751375800901
+          },
+          "predicted": {
+            "rise_time_seconds": 11.620000000000346,
+            "settling_time_seconds": 27.440000000000055,
+            "overshoot_percent": 39.240229635621176,
+            "peak_response_kw": 1.4550728759765625,
+            "final_steady_state_kw": 1.3943719482421875
+          }
+        },
+        {
+          "step_time": 2799.76,
+          "from_voltage": 3.61009019923361,
+          "to_voltage": 4.21553724366851,
+          "actual": {
+            "rise_time_seconds": 21.139999999999873,
+            "settling_time_seconds": null,
+            "overshoot_percent": 25.395665327384005,
+            "peak_response_kw": 1.51490828957156,
+            "final_steady_state_kw": 1.4830482898225301
+          },
+          "predicted": {
+            "rise_time_seconds": 5.279999999999745,
+            "settling_time_seconds": 24.31999999999971,
+            "overshoot_percent": 34.586322564782776,
+            "peak_response_kw": 1.4692099609375,
+            "final_steady_state_kw": 1.4499779052734374
+          }
+        },
+        {
+          "step_time": 2849.7,
+          "from_voltage": 4.21553724366851,
+          "to_voltage": 4.81173331571765,
+          "actual": {
+            "rise_time_seconds": 34.98000000000002,
+            "settling_time_seconds": null,
+            "overshoot_percent": 14.369601601816465,
+            "peak_response_kw": 1.6532034656789698,
+            "final_steady_state_kw": 1.6298237235774
+          },
+          "predicted": {
+            "rise_time_seconds": 6.7199999999998,
+            "settling_time_seconds": 6.720000000000255,
+            "overshoot_percent": 6.054233842725733,
+            "peak_response_kw": 1.529458251953125,
+            "final_steady_state_kw": 1.5249210205078125
+          }
+        },
+        {
+          "step_time": 2899.6,
+          "from_voltage": 4.81173331571765,
+          "to_voltage": 5.39414100327968,
+          "actual": {
+            "rise_time_seconds": 24.079999999999927,
+            "settling_time_seconds": null,
+            "overshoot_percent": 31.931521413359647,
+            "peak_response_kw": 1.7681050401622,
+            "final_steady_state_kw": 1.7285094013139801
+          },
+          "predicted": {
+            "rise_time_seconds": 7.720000000000255,
+            "settling_time_seconds": 8.720000000000255,
+            "overshoot_percent": 4.594647287980931,
+            "peak_response_kw": 1.630356689453125,
+            "final_steady_state_kw": 1.62572509765625
+          }
+        },
+        {
+          "step_time": 2949.78,
+          "from_voltage": 5.39414100327968,
+          "to_voltage": 5.9583278321849,
+          "actual": {
+            "rise_time_seconds": 30.960000000000036,
+            "settling_time_seconds": 48.5,
+            "overshoot_percent": 36.84741931834828,
+            "peak_response_kw": 2.02340190244318,
+            "final_steady_state_kw": 1.93743008041748
+          },
+          "predicted": {
+            "rise_time_seconds": 9.739999999999782,
+            "settling_time_seconds": 12.0,
+            "overshoot_percent": 3.9356532736384646,
+            "peak_response_kw": 1.7758055419921874,
+            "final_steady_state_kw": 1.77012255859375
+          }
+        },
+        {
+          "step_time": 2999.46,
+          "from_voltage": 5.9583278321849,
+          "to_voltage": 6.5,
+          "actual": {
+            "rise_time_seconds": 35.840000000000146,
+            "settling_time_seconds": null,
+            "overshoot_percent": 30.363015333541306,
+            "peak_response_kw": 2.2679066939691404,
+            "final_steady_state_kw": 2.1960560425695
+          },
+          "predicted": {
+            "rise_time_seconds": 10.019999999999982,
+            "settling_time_seconds": 14.579999999999927,
+            "overshoot_percent": 3.6479214537836966,
+            "peak_response_kw": 1.9759459228515626,
+            "final_steady_state_kw": 1.968701904296875
+          }
+        },
+        {
+          "step_time": 3049.72,
+          "from_voltage": 6.5,
+          "to_voltage": 7.01503505445732,
+          "actual": {
+            "rise_time_seconds": 68.78000000000065,
+            "settling_time_seconds": null,
+            "overshoot_percent": 20.015164684986743,
+            "peak_response_kw": 1.78512655163344,
+            "final_steady_state_kw": 1.8544117467032448
+          },
+          "predicted": {
+            "rise_time_seconds": 12.700000000000273,
+            "settling_time_seconds": 1121.8200000000002,
+            "overshoot_percent": 349.94908504615665,
+            "peak_response_kw": 3.05610009765625,
+            "final_steady_state_kw": 2.210373291015625
+          }
+        },
+        {
+          "step_time": 4200.16,
+          "from_voltage": 7.01503505445732,
+          "to_voltage": 6.5,
+          "actual": {
+            "rise_time_seconds": 28.61999999999989,
+            "settling_time_seconds": 48.279999999999745,
+            "overshoot_percent": 34.6977777484185,
+            "peak_response_kw": 1.5436026155100602,
+            "final_steady_state_kw": 1.62083673590496
+          },
+          "predicted": {
+            "rise_time_seconds": 12.159999999999854,
+            "settling_time_seconds": 17.520000000000437,
+            "overshoot_percent": -0.0,
+            "peak_response_kw": 1.968701904296875,
+            "final_steady_state_kw": 1.968701904296875
+          }
+        }
+      ]
+    }
+  }
+}

@@ -13,11 +13,19 @@ import {
   YAxis,
 } from 'recharts'
 import { cn } from '@/lib/cn'
-import type { FeatureImportancePoint, ResidualPoint } from './mockData'
+import type {
+  CrossCorrelationPayload,
+  FeatureImportancePoint,
+  FeatureImportanceResponse,
+  ResidualPoint,
+  ResponseCharacteristicsPayload,
+} from './types'
 
 type XAIPanelProps = {
-  featureImportance: FeatureImportancePoint[]
+  featureImportance: FeatureImportanceResponse
   residuals: ResidualPoint[]
+  crossCorrelation: CrossCorrelationPayload | null
+  responseCharacteristics: ResponseCharacteristicsPayload | null
   className?: string
 }
 
@@ -59,7 +67,13 @@ function ResidualTooltip({ active, payload }: TooltipProps<ResidualPoint>) {
   )
 }
 
-export function XAIPanel({ featureImportance, residuals, className }: XAIPanelProps) {
+export function XAIPanel({
+  featureImportance,
+  residuals,
+  crossCorrelation,
+  responseCharacteristics,
+  className,
+}: XAIPanelProps) {
   const residualStats = useMemo(() => {
     if (residuals.length === 0) return { mean: 0, maxAbs: 0 }
     const mean = residuals.reduce((sum, point) => sum + point.residual, 0) / residuals.length
@@ -88,40 +102,46 @@ export function XAIPanel({ featureImportance, residuals, className }: XAIPanelPr
           </span>
         </header>
 
-        <div className="mt-4 h-72 min-w-0">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              data={featureImportance}
-              layout="vertical"
-              margin={{ top: 8, right: 24, bottom: 8, left: 8 }}
-            >
-              <CartesianGrid stroke="rgba(255,255,255,0.07)" strokeDasharray="3 8" horizontal={false} />
-              <XAxis
-                axisLine={false}
-                domain={[0, 1]}
-                tick={{ fill: '#8B95A5', fontSize: 11 }}
-                tickFormatter={(value) => Number(value).toFixed(1)}
-                tickLine={false}
-                type="number"
-              />
-              <YAxis
-                axisLine={false}
-                dataKey="feature"
-                tick={{ fill: '#8B95A5', fontSize: 11 }}
-                tickLine={false}
-                type="category"
-                width={112}
-              />
-              <Tooltip content={<FeatureTooltip />} cursor={{ fill: 'rgba(0,245,255,0.05)' }} />
-              <Bar
-                dataKey="importance"
-                fill="#00F5FF"
-                radius={[0, 6, 6, 0]}
-                style={{ filter: 'drop-shadow(0 0 8px rgba(0,245,255,0.38))' }}
-              />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+        {featureImportance.available ? (
+          <div className="mt-4 h-72 min-w-0">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={featureImportance.items}
+                layout="vertical"
+                margin={{ top: 8, right: 24, bottom: 8, left: 8 }}
+              >
+                <CartesianGrid stroke="rgba(255,255,255,0.07)" strokeDasharray="3 8" horizontal={false} />
+                <XAxis
+                  axisLine={false}
+                  domain={[0, 1]}
+                  tick={{ fill: '#8B95A5', fontSize: 11 }}
+                  tickFormatter={(value) => Number(value).toFixed(1)}
+                  tickLine={false}
+                  type="number"
+                />
+                <YAxis
+                  axisLine={false}
+                  dataKey="feature"
+                  tick={{ fill: '#8B95A5', fontSize: 11 }}
+                  tickLine={false}
+                  type="category"
+                  width={112}
+                />
+                <Tooltip content={<FeatureTooltip />} cursor={{ fill: 'rgba(0,245,255,0.05)' }} />
+                <Bar
+                  dataKey="importance"
+                  fill="#00F5FF"
+                  radius={[0, 6, 6, 0]}
+                  style={{ filter: 'drop-shadow(0 0 8px rgba(0,245,255,0.38))' }}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        ) : (
+          <div className="mt-4 grid h-72 place-items-center rounded-lg border border-dashed border-white/10 bg-bg-deep/50 p-6 text-center text-sm leading-6 text-font-secondary">
+            {featureImportance.reason}
+          </div>
+        )}
       </article>
 
       <article className="min-w-0 rounded-lg border border-white/10 bg-black/20 p-4">
@@ -175,8 +195,95 @@ export function XAIPanel({ featureImportance, residuals, className }: XAIPanelPr
 
         <footer className="mt-3 flex items-center gap-2 rounded-md border border-accent-green/20 bg-accent-green/10 px-3 py-2 text-xs text-font-secondary">
           <Crosshair className="h-3.5 w-3.5 shrink-0 text-accent-green" />
-          Errors cluster around zero with bounded transition spikes.
+          Residual is actual power minus predicted power.
         </footer>
+      </article>
+
+      <article className="min-w-0 rounded-lg border border-white/10 bg-black/20 p-4">
+        <h2 className="text-lg font-semibold text-font-primary">Cross-Correlation Heatmap</h2>
+        <div className="mt-4 overflow-x-auto">
+          {crossCorrelation ? (
+            <table className="w-full min-w-[560px] border-separate border-spacing-1 font-mono text-xs">
+              <thead>
+                <tr>
+                  <th className="px-2 py-2 text-left text-font-tertiary">Signal Pair</th>
+                  {crossCorrelation.lags.map((lag) => (
+                    <th key={lag} className="px-2 py-2 text-right text-font-tertiary">
+                      {lag}s
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {crossCorrelation.rows.map((row) => (
+                  <tr key={row.label}>
+                    <td className="rounded-md bg-white/[0.04] px-2 py-2 text-font-secondary">{row.label}</td>
+                    {row.values.map((value, index) => (
+                      <td
+                        key={`${row.label}-${index}`}
+                        className="rounded-md px-2 py-2 text-right text-font-primary"
+                        style={{
+                          backgroundColor:
+                            value === null
+                              ? 'rgba(255,255,255,0.04)'
+                              : `rgba(${value >= 0 ? '0,245,255' : '255,92,0'},${Math.min(Math.abs(value), 1) * 0.55 + 0.08})`,
+                        }}
+                      >
+                        {value === null ? '--' : value.toFixed(2)}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <p className="rounded-lg border border-dashed border-white/10 bg-bg-deep/50 p-4 text-sm text-font-secondary">
+              Cross-correlation data is not available.
+            </p>
+          )}
+        </div>
+      </article>
+
+      <article className="min-w-0 rounded-lg border border-white/10 bg-black/20 p-4">
+        <h2 className="text-lg font-semibold text-font-primary">Response Characteristics</h2>
+        {responseCharacteristics?.available ? (
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            {responseCharacteristics.steps.slice(0, 4).map((step) => {
+              const predicted = step.predicted
+              return (
+                <div key={`${step.step_time}-${step.to_voltage}`} className="rounded-lg border border-white/10 bg-bg-deep/50 p-3">
+                  <p className="font-mono text-xs text-font-tertiary">
+                    {step.from_voltage.toFixed(2)}V → {step.to_voltage.toFixed(2)}V
+                  </p>
+                  <div className="mt-3 grid grid-cols-2 gap-2 font-mono text-xs">
+                    <span className="text-font-secondary">Rise</span>
+                    <span className="text-right text-font-primary">
+                      {predicted?.rise_time_seconds === null || predicted?.rise_time_seconds === undefined
+                        ? '--'
+                        : `${predicted.rise_time_seconds.toFixed(2)}s`}
+                    </span>
+                    <span className="text-font-secondary">Settling</span>
+                    <span className="text-right text-font-primary">
+                      {predicted?.settling_time_seconds === null || predicted?.settling_time_seconds === undefined
+                        ? '--'
+                        : `${predicted.settling_time_seconds.toFixed(2)}s`}
+                    </span>
+                    <span className="text-font-secondary">Overshoot</span>
+                    <span className="text-right text-font-primary">
+                      {predicted?.overshoot_percent === null || predicted?.overshoot_percent === undefined
+                        ? '--'
+                        : `${predicted.overshoot_percent.toFixed(1)}%`}
+                    </span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        ) : (
+          <p className="mt-4 rounded-lg border border-dashed border-white/10 bg-bg-deep/50 p-4 text-sm text-font-secondary">
+            {responseCharacteristics?.reason ?? 'Response characteristics are not available.'}
+          </p>
+        )}
       </article>
     </section>
   )

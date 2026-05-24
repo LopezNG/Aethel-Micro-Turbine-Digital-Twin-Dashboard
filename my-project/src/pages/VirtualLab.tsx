@@ -38,6 +38,11 @@ export default function VirtualLab() {
           modelVersion={simulation.modelVersion}
           manualVoltage={simulation.manualVoltage}
           dataset={simulation.dataset}
+          experiments={simulation.experiments}
+          models={simulation.models}
+          experimentMode={simulation.experimentMode}
+          includeUnknown={simulation.includeUnknown}
+          filterMode={simulation.filterMode}
           tickMs={simulation.tickMs}
           paused={simulation.paused}
           status={simulation.status}
@@ -46,6 +51,9 @@ export default function VirtualLab() {
           onModelChange={simulation.setModelVersion}
           onVoltageChange={simulation.setManualVoltage}
           onDatasetChange={simulation.setDataset}
+          onExperimentModeChange={simulation.setExperimentMode}
+          onIncludeUnknownChange={simulation.setIncludeUnknown}
+          onFilterModeChange={simulation.setFilterMode}
           onTickMsChange={simulation.setTickMs}
           onPausedChange={simulation.setPaused}
         />

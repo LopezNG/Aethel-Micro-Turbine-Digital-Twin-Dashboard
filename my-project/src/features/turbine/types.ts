@@ -1,6 +1,7 @@
-export type DatasetId = 'ex_9' | 'ex_22'
+import type { ExperimentMetadata, ExperimentMode, FilterMode, ModelInfo, ModelVersion } from '@/lib/api'
+
+export type DatasetId = string
 export type SimulationMode = 'historical' | 'manual'
-export type ModelVersion = 'baseline' | 'lstm'
 export type ConnectionStatus = 'connecting' | 'open' | 'closed' | 'error'
 
 export type TelemetryPoint = {
@@ -21,6 +22,11 @@ export type TelemetryPoint = {
   mode: SimulationMode
   isTransition: boolean
   latencyMs: number
+  filterMode: FilterMode
+  phase: 'steady_state' | 'rising_transition' | 'falling_transition'
+  alertStatus: 'normal' | 'anomaly' | 'maintenance_required' | null
+  severity: 'low' | 'medium' | 'high' | null
+  message: string | null
 }
 
 export type SimulationMetrics = {
@@ -31,3 +37,5 @@ export type SimulationMetrics = {
   sampleCount: number
   transitionCount: number
 }
+
+export type { ExperimentMetadata, ExperimentMode, FilterMode, ModelInfo, ModelVersion }

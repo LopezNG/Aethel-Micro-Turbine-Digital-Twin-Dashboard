@@ -1,23 +1,30 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { API_BASE_URL, apiGet, toWebSocketUrl } from '@/lib/api'
 import type {
   ConnectionStatus,
   DatasetId,
+  ExperimentMetadata,
+  ExperimentMode,
+  FilterMode,
+  ModelInfo,
   ModelVersion,
   SimulationMetrics,
   SimulationMode,
   TelemetryPoint,
 } from './types'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000'
 const MAX_POINTS = 220
 
 type ControlMessage = {
   mode?: SimulationMode
   input_voltage?: number
+  model?: ModelVersion
   model_version?: ModelVersion
   paused?: boolean
   tick_ms?: number
   dataset?: DatasetId
+  experiment_id?: DatasetId
+  filter_mode?: FilterMode
 }
 
 type ErrorPayload = {
@@ -27,12 +34,6 @@ type ErrorPayload = {
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max)
-}
-
-function toWebSocketUrl(baseUrl: string) {
-  const url = new URL(baseUrl)
-  url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:'
-  return url.toString().replace(/\/$/, '')
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -52,8 +53,20 @@ function parseTelemetry(payload: Record<string, unknown>): TelemetryPoint | null
 
   const mode = stringValue(payload.mode) === 'manual' ? 'manual' : 'historical'
   const modelVersion = stringValue(payload.model_version) === 'baseline' ? 'baseline' : 'lstm'
-  const dataset = stringValue(payload.dataset) === 'ex_9' ? 'ex_9' : 'ex_22'
+  const dataset = stringValue(payload.experiment_id, stringValue(payload.dataset, 'ex_22'))
   const elPower = typeof payload.el_power === 'number' ? payload.el_power : null
+  const filterMode = ['voltage', 'power', 'both'].includes(stringValue(payload.filter_mode))
+    ? (payload.filter_mode as FilterMode)
+    : 'none'
+  const phase = ['rising_transition', 'falling_transition'].includes(stringValue(payload.phase))
+    ? (payload.phase as TelemetryPoint['phase'])
+    : 'steady_state'
+  const alertStatus = ['normal', 'anomaly', 'maintenance_required'].includes(stringValue(payload.alert_status))
+    ? (payload.alert_status as TelemetryPoint['alertStatus'])
+    : null
+  const severity = ['low', 'medium', 'high'].includes(stringValue(payload.severity))
+    ? (payload.severity as TelemetryPoint['severity'])
+    : null
 
   return {
     sequence: numberValue(payload.sequence),
@@ -69,10 +82,15 @@ function parseTelemetry(payload: Record<string, unknown>): TelemetryPoint | null
     filteredVoltage: numberValue(payload.filtered_voltage),
     uncertainty: numberValue(payload.uncertainty),
     modelVersion,
-    modelSource: stringValue(payload.model_source, 'stub'),
+    modelSource: stringValue(payload.model_source, 'unknown'),
     mode,
     isTransition: Boolean(payload.is_transition),
     latencyMs: numberValue(payload.latency_ms),
+    filterMode,
+    phase,
+    alertStatus,
+    severity,
+    message: typeof payload.message === 'string' ? payload.message : null,
   }
 }
 
@@ -167,6 +185,11 @@ export function useTurbineSimulation() {
   const [points, setPoints] = useState<TelemetryPoint[]>([])
   const [status, setStatus] = useState<ConnectionStatus>('connecting')
   const [lastError, setLastError] = useState<string | null>(null)
+  const [experiments, setExperiments] = useState<ExperimentMetadata[]>([])
+  const [models, setModels] = useState<ModelInfo[]>([])
+  const [experimentMode, setExperimentModeState] = useState<ExperimentMode | 'all'>('all')
+  const [includeUnknown, setIncludeUnknownState] = useState(false)
+  const [filterMode, setFilterModeState] = useState<FilterMode>('none')
   const [mode, setModeState] = useState<SimulationMode>('historical')
   const [modelVersion, setModelVersionState] = useState<ModelVersion>('lstm')
   const [manualVoltage, setManualVoltageState] = useState(3)
@@ -184,6 +207,7 @@ export function useTurbineSimulation() {
     dataset,
     tickMs,
     paused,
+    filterMode,
   })
 
   useEffect(() => {
@@ -194,14 +218,54 @@ export function useTurbineSimulation() {
       dataset,
       tickMs,
       paused,
+      filterMode,
     }
-  }, [dataset, manualVoltage, mode, modelVersion, paused, tickMs])
+  }, [dataset, filterMode, manualVoltage, mode, modelVersion, paused, tickMs])
 
   const sendControl = useCallback((message: ControlMessage) => {
     const socket = socketRef.current
     if (!socket || socket.readyState !== WebSocket.OPEN) return
     socket.send(JSON.stringify(message))
   }, [])
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadOptions() {
+      try {
+        const [experimentPayload, modelPayload] = await Promise.all([
+          apiGet<{ experiments: ExperimentMetadata[] }>('/api/experiments', {
+            mode: experimentMode === 'all' ? undefined : experimentMode,
+            include_unknown: experimentMode === 'all' || includeUnknown,
+          }),
+          apiGet<{ models: ModelInfo[] }>('/api/models'),
+        ])
+        if (cancelled) return
+        setExperiments(experimentPayload.experiments)
+        const availableModels = modelPayload.models.filter((model) => model.available)
+        setModels(availableModels)
+        if (availableModels.length > 0 && !availableModels.some((model) => model.id === modelVersion)) {
+          setModelVersionState(availableModels[0].id)
+        }
+        if (
+          experimentPayload.experiments.length > 0 &&
+          !experimentPayload.experiments.some((experiment) => experiment.experiment_id === dataset)
+        ) {
+          const nextDataset = experimentPayload.experiments[0].experiment_id
+          setDatasetState(nextDataset)
+          setPoints([])
+          sendControl({ experiment_id: nextDataset, dataset: nextDataset })
+        }
+      } catch (error) {
+        if (!cancelled) setLastError(error instanceof Error ? error.message : 'Unable to load experiments')
+      }
+    }
+
+    loadOptions()
+    return () => {
+      cancelled = true
+    }
+  }, [dataset, experimentMode, includeUnknown, modelVersion, sendControl])
 
   useEffect(() => {
     let cancelled = false
@@ -212,10 +276,11 @@ export function useTurbineSimulation() {
       const desired = desiredStateRef.current
       setStatus('connecting')
 
-      const url = new URL(`${wsBase}/ws/simulate`)
-      url.searchParams.set('dataset', desired.dataset)
+      const url = new URL(`${wsBase}/ws/live`)
+      url.searchParams.set('experiment_id', desired.dataset)
       url.searchParams.set('tick_ms', String(desired.tickMs))
-      url.searchParams.set('model_version', desired.modelVersion)
+      url.searchParams.set('model', desired.modelVersion)
+      url.searchParams.set('filter_mode', desired.filterMode)
 
       const socket = new WebSocket(url)
       socketRef.current = socket
@@ -227,11 +292,14 @@ export function useTurbineSimulation() {
         const current = desiredStateRef.current
         sendControl({
           dataset: current.dataset,
+          experiment_id: current.dataset,
           mode: current.mode,
+          model: current.modelVersion,
           model_version: current.modelVersion,
           input_voltage: current.manualVoltage,
           tick_ms: current.tickMs,
           paused: current.paused,
+          filter_mode: current.filterMode,
         })
       }
 
@@ -301,7 +369,7 @@ export function useTurbineSimulation() {
   const setModelVersion = useCallback(
     (nextModel: ModelVersion) => {
       setModelVersionState(nextModel)
-      sendControl({ model_version: nextModel })
+      sendControl({ model: nextModel, model_version: nextModel })
     },
     [sendControl],
   )
@@ -320,7 +388,7 @@ export function useTurbineSimulation() {
     (nextDataset: DatasetId) => {
       setDatasetState(nextDataset)
       setPoints([])
-      sendControl({ dataset: nextDataset })
+      sendControl({ dataset: nextDataset, experiment_id: nextDataset })
     },
     [sendControl],
   )
@@ -342,6 +410,26 @@ export function useTurbineSimulation() {
     [sendControl],
   )
 
+  const setExperimentMode = useCallback(
+    (nextMode: ExperimentMode | 'all') => {
+      setExperimentModeState(nextMode)
+    },
+    [],
+  )
+
+  const setIncludeUnknown = useCallback((nextIncludeUnknown: boolean) => {
+    setIncludeUnknownState(nextIncludeUnknown)
+  }, [])
+
+  const setFilterMode = useCallback(
+    (nextFilterMode: FilterMode) => {
+      setFilterModeState(nextFilterMode)
+      setPoints([])
+      sendControl({ filter_mode: nextFilterMode })
+    },
+    [sendControl],
+  )
+
   const metrics = useMemo(() => calculateMetrics(points), [points])
   const currentPoint = points.at(-1) ?? null
 
@@ -351,6 +439,11 @@ export function useTurbineSimulation() {
     metrics,
     status,
     lastError,
+    experiments,
+    models,
+    experimentMode,
+    includeUnknown,
+    filterMode,
     mode,
     modelVersion,
     manualVoltage,
@@ -363,5 +456,8 @@ export function useTurbineSimulation() {
     setDataset,
     setTickMs,
     setPaused,
+    setExperimentMode,
+    setIncludeUnknown,
+    setFilterMode,
   }
 }

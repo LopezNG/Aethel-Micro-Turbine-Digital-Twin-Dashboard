@@ -1,0 +1,21 @@
+{
+  "baseline": {
+    "available": true,
+    "method": "linear_regression_coefficient",
+    "model": "baseline",
+    "items": [
+      {
+        "feature": "input_voltage",
+        "importance": 1.0,
+        "raw_value": 250.18441344573554,
+        "unit": "abs(watts_per_volt)"
+      }
+    ]
+  },
+  "lstm": {
+    "available": false,
+    "model": "lstm",
+    "reason": "Feature importance is not available for the current LSTM without a sequence attribution method.",
+    "items": []
+  }
+}

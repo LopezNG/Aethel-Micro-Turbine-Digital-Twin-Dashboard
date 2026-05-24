@@ -5,4 +5,7 @@ numpy==2.2.1
 pandas==2.2.3
 scipy==1.14.1
 joblib==1.4.2
-scikit-learn==1.5.1
+scikit-learn==1.8.0
+torch>=2.2,<3.0
+python-multipart==0.0.20
+pytest==9.0.3

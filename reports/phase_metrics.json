@@ -1,0 +1,106 @@
+{
+  "ex_4": {
+    "baseline": {
+      "experiment_id": "ex_4",
+      "model": "baseline",
+      "threshold": 0.05,
+      "phases": [
+        {
+          "phase": "steady_state",
+          "rmse": 0.48885414743746375,
+          "mae": 0.26456707111176636,
+          "count": 9787
+        },
+        {
+          "phase": "rising_transition",
+          "rmse": 1.3939819917890444,
+          "mae": 1.2729600334632607,
+          "count": 4
+        },
+        {
+          "phase": "falling_transition",
+          "rmse": 1.6037847581358748,
+          "mae": 1.4470915813139165,
+          "count": 4
+        }
+      ]
+    },
+    "lstm": {
+      "experiment_id": "ex_4",
+      "model": "lstm",
+      "threshold": 0.05,
+      "phases": [
+        {
+          "phase": "steady_state",
+          "rmse": 0.4333571381875307,
+          "mae": 0.22702376019347129,
+          "count": 9787
+        },
+        {
+          "phase": "rising_transition",
+          "rmse": 0.06741592604530068,
+          "mae": 0.06264674309495122,
+          "count": 4
+        },
+        {
+          "phase": "falling_transition",
+          "rmse": 0.18103234895124956,
+          "mae": 0.16932718186054946,
+          "count": 4
+        }
+      ]
+    }
+  },
+  "ex_22": {
+    "baseline": {
+      "experiment_id": "ex_22",
+      "model": "baseline",
+      "threshold": 0.05,
+      "phases": [
+        {
+          "phase": "steady_state",
+          "rmse": 0.19426344192771103,
+          "mae": 0.16130039139770186,
+          "count": 8354
+        },
+        {
+          "phase": "rising_transition",
+          "rmse": 0.21536454223082313,
+          "mae": 0.1977994920635704,
+          "count": 68
+        },
+        {
+          "phase": "falling_transition",
+          "rmse": 0.18369028175566765,
+          "mae": 0.15670142138038948,
+          "count": 68
+        }
+      ]
+    },
+    "lstm": {
+      "experiment_id": "ex_22",
+      "model": "lstm",
+      "threshold": 0.05,
+      "phases": [
+        {
+          "phase": "steady_state",
+          "rmse": 0.16625367052265413,
+          "mae": 0.13413062451191,
+          "count": 8354
+        },
+        {
+          "phase": "rising_transition",
+          "rmse": 0.13674884708105253,
+          "mae": 0.1101563273033934,
+          "count": 68
+        },
+        {
+          "phase": "falling_transition",
+          "rmse": 0.26008723929442445,
+          "mae": 0.2270288247458131,
+          "count": 68
+        }
+      ]
+    }
+  }
+}

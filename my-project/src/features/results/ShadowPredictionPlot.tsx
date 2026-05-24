@@ -11,7 +11,7 @@ import {
   YAxis,
 } from 'recharts'
 import { cn } from '@/lib/cn'
-import type { PredictionPoint } from './mockData'
+import type { PredictionPoint } from './types'
 
 type ShadowPredictionPlotProps = {
   data: PredictionPoint[]
@@ -41,10 +41,10 @@ type TransitionBand = {
 const SERIES = [
   { label: 'Ground Truth Power', color: '#FFFFFF', line: 'solid' },
   { label: 'Baseline Linear Prediction', color: '#8B95A5', line: 'dashed' },
-  { label: 'Advanced LSTM Prediction', color: '#00F5FF', line: 'solid' },
+  { label: 'LSTM Prediction', color: '#00F5FF', line: 'solid' },
 ] as const
 
-function formatPower(value: number | undefined) {
+function formatPower(value: number | null | undefined) {
   if (typeof value !== 'number' || Number.isNaN(value)) return '--'
   return `${value.toFixed(2)} kW`
 }
@@ -54,7 +54,7 @@ function buildTransitionBands(data: PredictionPoint[]) {
   let activeBand: TransitionBand | null = null
 
   data.forEach((point) => {
-    if (point.phase === 'transition') {
+    if (point.phase !== 'steady_state') {
       activeBand ??= { start: point.timestamp - 0.45, end: point.timestamp + 0.45 }
       activeBand.end = point.timestamp + 0.45
       return
@@ -74,10 +74,11 @@ function PredictionTooltip({ active, payload }: ChartTooltipProps) {
   const point = payload?.[0]?.payload
   if (!active || !point) return null
 
-  const baselineError = point.baselinePrediction - point.groundTruthPower
-  const lstmError = point.lstmPrediction - point.groundTruthPower
+  const baselineError =
+    point.baselinePrediction === null || point.groundTruthPower === null ? 0 : point.baselinePrediction - point.groundTruthPower
+  const lstmError = point.lstmPrediction === null || point.groundTruthPower === null ? 0 : point.lstmPrediction - point.groundTruthPower
   const lagReduction = Math.abs(baselineError) - Math.abs(lstmError)
-  const isTransition = point.phase === 'transition'
+  const isTransition = point.phase !== 'steady_state'
 
   return (
     <div className="min-w-72 rounded-lg border border-white/10 bg-bg-deep/95 p-3 shadow-[0_22px_70px_rgba(0,0,0,0.48)] backdrop-blur-xl">
@@ -109,12 +110,12 @@ function PredictionTooltip({ active, payload }: ChartTooltipProps) {
           <span>{formatPower(point.baselinePrediction)}</span>
         </div>
         <div className="flex items-center justify-between gap-4 text-accent-cyan">
-          <span>Advanced LSTM</span>
+          <span>LSTM</span>
           <span>{formatPower(point.lstmPrediction)}</span>
         </div>
       </div>
 
-      {isTransition && (
+      {isTransition && point.groundTruthPower !== null && (
         <div className="mt-3 rounded-md border border-accent-orange/20 bg-accent-orange/10 p-2 text-xs leading-relaxed text-font-primary">
           <span className="font-semibold text-accent-orange">Lag watch: </span>
           baseline trails by {Math.abs(baselineError).toFixed(2)} kW while LSTM is{' '}
@@ -137,9 +138,10 @@ export function ShadowPredictionPlot({
       point.baselinePrediction,
       point.lstmPrediction,
     ])
-    if (values.length === 0) return [0, 8]
-    const min = Math.max(0, Math.min(...values) - 0.45)
-    const max = Math.max(...values) + 0.45
+    const numericValues = values.filter((value): value is number => typeof value === 'number')
+    if (numericValues.length === 0) return [0, 8]
+    const min = Math.max(0, Math.min(...numericValues) - 0.45)
+    const max = Math.max(...numericValues) + 0.45
     return [Number(min.toFixed(1)), Number(max.toFixed(1))]
   }, [data])
 
@@ -294,6 +296,7 @@ export function ShadowPredictionPlot({
                 strokeOpacity={0.86}
                 strokeWidth={2}
                 type="monotone"
+                connectNulls={false}
               />
               <Line
                 dataKey="baselinePrediction"
@@ -305,16 +308,18 @@ export function ShadowPredictionPlot({
                 strokeOpacity={0.78}
                 strokeWidth={2}
                 type="monotone"
+                connectNulls={false}
               />
               <Line
                 dataKey="lstmPrediction"
                 dot={false}
                 isAnimationActive={false}
-                name="Advanced LSTM Prediction"
+                name="LSTM Prediction"
                 stroke="#00F5FF"
                 strokeWidth={3}
                 style={{ filter: 'drop-shadow(0 0 10px rgba(0,245,255,0.72))' }}
                 type="monotone"
+                connectNulls={false}
               />
             </LineChart>
           </ResponsiveContainer>

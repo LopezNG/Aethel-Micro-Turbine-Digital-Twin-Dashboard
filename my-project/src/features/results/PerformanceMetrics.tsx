@@ -1,7 +1,7 @@
 import { Gauge, Sigma, TrendingDown } from 'lucide-react'
 import { useMemo } from 'react'
 import { cn } from '@/lib/cn'
-import type { MetricComparison } from './mockData'
+import type { MetricComparison } from './types'
 
 type PerformanceMetricsProps = {
   metrics: MetricComparison[]
@@ -144,9 +144,15 @@ export function PerformanceMetrics({ metrics, className }: PerformanceMetricsPro
       </div>
 
       <div className="flex flex-1 flex-col gap-3">
-        {metrics.map((metric) => (
-          <MetricTile key={metric.id} metric={metric} />
-        ))}
+        {metrics.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-white/10 bg-black/20 p-4 text-sm text-font-secondary">
+            No comparable backend metrics are available yet.
+          </div>
+        ) : (
+          metrics.map((metric) => (
+            <MetricTile key={metric.id} metric={metric} />
+          ))
+        )}
       </div>
     </aside>
   )

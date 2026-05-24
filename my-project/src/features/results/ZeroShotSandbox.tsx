@@ -1,4 +1,4 @@
-import { Clock3, Gauge, Loader2, Play, Plus, RotateCcw, Trash2, Zap } from 'lucide-react'
+import { Clock3, Gauge, Loader2, Play, Plus, RotateCcw, Trash2, Upload, Zap } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import {
   CartesianGrid,
@@ -9,18 +9,36 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
+import { apiPost, uploadCsv } from '@/lib/api'
 import { cn } from '@/lib/cn'
-import {
-  DEFAULT_SANDBOX_STEPS,
-  buildSandboxPrediction,
-  type SandboxPredictionPoint,
-  type SandboxStep,
-} from './mockData'
+import type { BackendPredictionPayload, PredictionPhase } from './types'
+
+type SandboxStep = {
+  id: string
+  voltage: number
+  seconds: number
+}
+
+type SandboxPredictionPoint = {
+  timestamp: number
+  timeLabel: string
+  inputVoltage: number
+  groundTruthPower: number | null
+  baselinePrediction: number | null
+  lstmPrediction: number | null
+  phase: PredictionPhase
+  scenarioStep: number
+}
+
+type UploadResponse = {
+  upload_id: string
+  filename: string
+  sample_count: number
+  has_ground_truth: boolean
+}
 
 type ZeroShotSandboxProps = {
   className?: string
-  initialSteps?: SandboxStep[]
-  onSimulate?: (steps: SandboxStep[]) => Promise<SandboxPredictionPoint[]>
 }
 
 type SandboxTooltipPayload = {
@@ -32,7 +50,13 @@ type SandboxTooltipProps = {
   payload?: SandboxTooltipPayload[]
 }
 
-function formatPower(value: number | undefined) {
+const DEFAULT_SANDBOX_STEPS: SandboxStep[] = [
+  { id: 'step-1', voltage: 3, seconds: 5 },
+  { id: 'step-2', voltage: 7, seconds: 10 },
+  { id: 'step-3', voltage: 5.5, seconds: 6 },
+]
+
+function formatPower(value: number | null | undefined) {
   if (typeof value !== 'number') return '--'
   return `${value.toFixed(2)} kW`
 }
@@ -54,6 +78,12 @@ function SandboxTooltip({ active, payload }: SandboxTooltipProps) {
           <span>Voltage</span>
           <span>{point.inputVoltage.toFixed(2)} V</span>
         </div>
+        {point.groundTruthPower !== null && (
+          <div className="flex justify-between gap-4 text-white">
+            <span>Ground truth</span>
+            <span>{formatPower(point.groundTruthPower)}</span>
+          </div>
+        )}
         <div className="flex justify-between gap-4 text-font-secondary">
           <span>Baseline</span>
           <span>{formatPower(point.baselinePrediction)}</span>
@@ -67,26 +97,27 @@ function SandboxTooltip({ active, payload }: SandboxTooltipProps) {
   )
 }
 
-export function ZeroShotSandbox({
-  className,
-  initialSteps = DEFAULT_SANDBOX_STEPS,
-  onSimulate,
-}: ZeroShotSandboxProps) {
-  const [steps, setSteps] = useState<SandboxStep[]>(initialSteps)
-  const [output, setOutput] = useState<SandboxPredictionPoint[]>(() => buildSandboxPrediction(initialSteps))
+export function ZeroShotSandbox({ className }: ZeroShotSandboxProps) {
+  const [steps, setSteps] = useState<SandboxStep[]>(DEFAULT_SANDBOX_STEPS)
+  const [output, setOutput] = useState<SandboxPredictionPoint[]>([])
   const [running, setRunning] = useState(false)
   const [lastError, setLastError] = useState<string | null>(null)
+  const [uploadMeta, setUploadMeta] = useState<UploadResponse | null>(null)
+  const [primaryModel, setPrimaryModel] = useState<'baseline' | 'lstm'>('lstm')
 
   const scenarioStats = useMemo(() => {
-    const totalSeconds = steps.reduce((sum, step) => sum + Math.max(step.seconds, 0), 0)
+    const totalSeconds = uploadMeta?.sample_count ?? steps.reduce((sum, step) => sum + Math.max(step.seconds, 0), 0)
     const weightedVoltage =
-      totalSeconds === 0
+      output.length === 0
         ? 0
-        : steps.reduce((sum, step) => sum + step.voltage * Math.max(step.seconds, 0), 0) / totalSeconds
-    const peakPower = output.length === 0 ? 0 : Math.max(...output.map((point) => point.lstmPrediction))
+        : output.reduce((sum, point) => sum + point.inputVoltage, 0) / output.length
+    const peakPower =
+      output.length === 0
+        ? 0
+        : Math.max(...output.map((point) => (primaryModel === 'lstm' ? point.lstmPrediction : point.baselinePrediction) ?? 0))
 
     return { totalSeconds, weightedVoltage, peakPower }
-  }, [output, steps])
+  }, [output, primaryModel, steps, uploadMeta])
 
   const updateStep = (id: string, field: 'voltage' | 'seconds', value: number) => {
     setSteps((current) =>
@@ -102,6 +133,7 @@ export function ZeroShotSandbox({
   }
 
   const addStep = () => {
+    setUploadMeta(null)
     setSteps((current) => [
       ...current,
       {
@@ -118,7 +150,8 @@ export function ZeroShotSandbox({
 
   const resetSteps = () => {
     setSteps(DEFAULT_SANDBOX_STEPS)
-    setOutput(buildSandboxPrediction(DEFAULT_SANDBOX_STEPS))
+    setOutput([])
+    setUploadMeta(null)
     setLastError(null)
   }
 
@@ -127,13 +160,32 @@ export function ZeroShotSandbox({
     setLastError(null)
 
     try {
-      await new Promise<void>((resolve) => {
-        window.setTimeout(resolve, 350)
-      })
-      const nextOutput = onSimulate ? await onSimulate(steps) : buildSandboxPrediction(steps)
-      setOutput(nextOutput)
+      const samples = buildSamples(steps)
+      const body = uploadMeta
+        ? { upload_id: uploadMeta.upload_id }
+        : { samples }
+      const [baseline, lstm] = await Promise.all([
+        apiPost<BackendPredictionPayload>('/api/predict-sequence', { ...body, model: 'baseline' }),
+        apiPost<BackendPredictionPayload>('/api/predict-sequence', { ...body, model: 'lstm' }),
+      ])
+      setOutput(mergeSandboxSeries(baseline, lstm))
     } catch (error) {
-      setLastError(error instanceof Error ? error.message : 'Unable to simulate scenario')
+      setLastError(error instanceof Error ? error.message : 'Unable to run backend prediction')
+    } finally {
+      setRunning(false)
+    }
+  }
+
+  const onUpload = async (file: File | null) => {
+    if (!file) return
+    setRunning(true)
+    setLastError(null)
+    try {
+      const uploaded = await uploadCsv<UploadResponse>('/api/upload-sequence', file)
+      setUploadMeta(uploaded)
+      setOutput([])
+    } catch (error) {
+      setLastError(error instanceof Error ? error.message : 'Unable to upload CSV')
     } finally {
       setRunning(false)
     }
@@ -150,14 +202,14 @@ export function ZeroShotSandbox({
         <div>
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-font-tertiary">
             <Zap className="h-4 w-4 text-accent-green" />
-            Zero-Shot Sandbox
+            API Sandbox
           </div>
           <h2 className="mt-2 text-2xl font-semibold leading-tight text-font-primary">Custom Voltage Scenario</h2>
         </div>
         <div className="grid grid-cols-3 gap-2 font-mono text-xs">
           <div className="min-w-20 rounded-md border border-white/10 bg-black/20 px-3 py-2">
-            <p className="text-font-tertiary">Duration</p>
-            <p className="mt-1 text-font-primary">{scenarioStats.totalSeconds}s</p>
+            <p className="text-font-tertiary">Samples</p>
+            <p className="mt-1 text-font-primary">{scenarioStats.totalSeconds}</p>
           </div>
           <div className="min-w-20 rounded-md border border-white/10 bg-black/20 px-3 py-2">
             <p className="text-font-tertiary">Mean V</p>
@@ -184,9 +236,29 @@ export function ZeroShotSandbox({
             </button>
           </div>
 
+          <label className="mt-4 flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-dashed border-white/15 bg-bg-deep/50 px-3 py-3 text-xs text-font-secondary transition hover:border-accent-cyan/40 hover:text-font-primary">
+            <span className="inline-flex items-center gap-2">
+              <Upload className="h-3.5 w-3.5 text-accent-cyan" />
+              {uploadMeta ? `${uploadMeta.filename} · ${uploadMeta.sample_count} rows` : 'Upload CSV voltage sequence'}
+            </span>
+            <input type="file" accept=".csv,text/csv" className="hidden" onChange={(event) => onUpload(event.target.files?.[0] ?? null)} />
+          </label>
+
+          <label className="mt-3 grid gap-2 text-xs text-font-secondary">
+            Primary model
+            <select
+              value={primaryModel}
+              onChange={(event) => setPrimaryModel(event.target.value as 'baseline' | 'lstm')}
+              className="h-9 rounded-md border border-white/10 bg-surface-solid px-2 text-sm text-font-primary outline-none transition focus:border-accent-cyan/50"
+            >
+              <option value="lstm">LSTM</option>
+              <option value="baseline">Baseline</option>
+            </select>
+          </label>
+
           <div className="mt-4 flex flex-1 flex-col gap-3 overflow-y-auto overflow-x-hidden pr-1">
             {steps.map((step, index) => (
-              <div key={step.id} className="min-w-0 rounded-lg border border-white/10 bg-bg-deep/60 p-3">
+              <div key={step.id} className={cn('min-w-0 rounded-lg border border-white/10 bg-bg-deep/60 p-3', uploadMeta && 'opacity-45')}>
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <span className="font-mono text-xs text-font-tertiary">#{index + 1}</span>
                   <button
@@ -194,7 +266,7 @@ export function ZeroShotSandbox({
                     aria-label={`Remove step ${index + 1}`}
                     onClick={() => removeStep(step.id)}
                     className="inline-flex h-7 w-7 items-center justify-center rounded-md text-font-tertiary transition hover:bg-accent-orange/10 hover:text-accent-orange disabled:cursor-not-allowed disabled:opacity-40"
-                    disabled={steps.length === 1}
+                    disabled={steps.length === 1 || Boolean(uploadMeta)}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
@@ -212,8 +284,9 @@ export function ZeroShotSandbox({
                       max={10}
                       step={0.1}
                       value={step.voltage}
+                      disabled={Boolean(uploadMeta)}
                       onChange={(event) => updateStep(step.id, 'voltage', Number(event.target.value))}
-                      className="h-10 min-w-0 rounded-md border border-white/10 bg-surface-solid px-3 font-mono text-sm text-font-primary outline-none transition focus:border-accent-cyan/50"
+                      className="h-10 min-w-0 rounded-md border border-white/10 bg-surface-solid px-3 font-mono text-sm text-font-primary outline-none transition focus:border-accent-cyan/50 disabled:opacity-50"
                     />
                   </label>
                   <label className="grid min-w-0 gap-2">
@@ -226,8 +299,9 @@ export function ZeroShotSandbox({
                       min={1}
                       step={1}
                       value={step.seconds}
+                      disabled={Boolean(uploadMeta)}
                       onChange={(event) => updateStep(step.id, 'seconds', Number(event.target.value))}
-                      className="h-10 min-w-0 rounded-md border border-white/10 bg-surface-solid px-3 font-mono text-sm text-font-primary outline-none transition focus:border-accent-cyan/50"
+                      className="h-10 min-w-0 rounded-md border border-white/10 bg-surface-solid px-3 font-mono text-sm text-font-primary outline-none transition focus:border-accent-cyan/50 disabled:opacity-50"
                     />
                   </label>
                 </div>
@@ -243,7 +317,7 @@ export function ZeroShotSandbox({
               className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-accent-cyan px-4 text-sm font-semibold text-bg-deep transition hover:bg-white disabled:cursor-wait disabled:opacity-70"
             >
               {running ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-              Simulate Custom Scenario
+              Run Backend Prediction
             </button>
             <button
               type="button"
@@ -313,36 +387,10 @@ export function ZeroShotSandbox({
                   width={48}
                 />
                 <Tooltip content={<SandboxTooltip />} cursor={{ stroke: '#00F5FF', strokeOpacity: 0.32 }} />
-                <Line
-                  dataKey="inputVoltage"
-                  dot={false}
-                  isAnimationActive={false}
-                  stroke="#FF5C00"
-                  strokeWidth={2.2}
-                  type="stepAfter"
-                  yAxisId="voltage"
-                />
-                <Line
-                  dataKey="baselinePrediction"
-                  dot={false}
-                  isAnimationActive={false}
-                  stroke="#8B95A5"
-                  strokeDasharray="7 7"
-                  strokeOpacity={0.8}
-                  strokeWidth={2}
-                  type="monotone"
-                  yAxisId="power"
-                />
-                <Line
-                  dataKey="lstmPrediction"
-                  dot={false}
-                  isAnimationActive={false}
-                  stroke="#00F5FF"
-                  strokeWidth={3}
-                  style={{ filter: 'drop-shadow(0 0 10px rgba(0,245,255,0.7))' }}
-                  type="monotone"
-                  yAxisId="power"
-                />
+                <Line dataKey="inputVoltage" dot={false} isAnimationActive={false} stroke="#FF5C00" strokeWidth={2.2} type="stepAfter" yAxisId="voltage" />
+                <Line dataKey="groundTruthPower" dot={false} isAnimationActive={false} stroke="#FFFFFF" strokeOpacity={0.62} strokeWidth={1.8} type="monotone" yAxisId="power" connectNulls={false} />
+                <Line dataKey="baselinePrediction" dot={false} isAnimationActive={false} stroke="#8B95A5" strokeDasharray="7 7" strokeOpacity={0.8} strokeWidth={2} type="monotone" yAxisId="power" connectNulls={false} />
+                <Line dataKey="lstmPrediction" dot={false} isAnimationActive={false} stroke="#00F5FF" strokeWidth={3} style={{ filter: 'drop-shadow(0 0 10px rgba(0,245,255,0.7))' }} type="monotone" yAxisId="power" connectNulls={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -351,3 +399,35 @@ export function ZeroShotSandbox({
     </section>
   )
 }
+
+function buildSamples(steps: SandboxStep[]) {
+  const samples: Array<{ timestamp: number; input_voltage: number }> = []
+  let timestamp = 0
+  steps.forEach((step) => {
+    for (let offset = 0; offset < Math.max(Math.round(step.seconds), 1); offset += 1) {
+      samples.push({ timestamp, input_voltage: Math.min(Math.max(step.voltage, 0), 10) })
+      timestamp += 1
+    }
+  })
+  return samples
+}
+
+function mergeSandboxSeries(baseline: BackendPredictionPayload, lstm: BackendPredictionPayload): SandboxPredictionPoint[] {
+  const baselineByTimestamp = new Map(baseline.points.map((point) => [point.timestamp, point]))
+  const firstTimestamp = lstm.points[0]?.timestamp ?? baseline.points[0]?.timestamp ?? 0
+  return lstm.points.map((point, index) => {
+    const baselinePoint = baselineByTimestamp.get(point.timestamp)
+    const relativeTime = point.timestamp - firstTimestamp
+    return {
+      timestamp: Number(relativeTime.toFixed(3)),
+      timeLabel: `${relativeTime.toFixed(1)}s`,
+      inputVoltage: point.input_voltage,
+      groundTruthPower: point.ground_truth_power_kw,
+      baselinePrediction: baselinePoint?.predicted_power_kw ?? null,
+      lstmPrediction: point.predicted_power_kw,
+      phase: point.phase,
+      scenarioStep: index + 1,
+    }
+  })
+}
+

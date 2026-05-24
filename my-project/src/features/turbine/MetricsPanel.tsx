@@ -1,4 +1,4 @@
-import { Activity, Clock3, Gauge, ShieldCheck } from 'lucide-react'
+import { Activity, AlertTriangle, Clock3, Gauge, ShieldCheck } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import type { SimulationMetrics, TelemetryPoint } from './types'
 
@@ -136,6 +136,31 @@ export function MetricsPanel({ metrics, currentPoint }: MetricsPanelProps) {
             : 'Stationary regime. Error is evaluated against settled turbine output.'}
         </p>
       </section>
+
+      {currentPoint?.alertStatus && (
+        <section
+          className={cn(
+            'rounded-lg border p-4',
+            currentPoint.alertStatus === 'normal'
+              ? 'border-accent-green/20 bg-accent-green/10'
+              : 'border-accent-orange/25 bg-accent-orange/10',
+          )}
+        >
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-font-tertiary">
+            <AlertTriangle
+              className={cn(
+                'h-4 w-4',
+                currentPoint.alertStatus === 'normal' ? 'text-accent-green' : 'text-accent-orange',
+              )}
+            />
+            Maintenance Alert
+          </div>
+          <p className="mt-2 font-mono text-sm text-font-primary">{currentPoint.alertStatus.replaceAll('_', ' ')}</p>
+          <p className="mt-1 text-xs leading-5 text-font-secondary">
+            {currentPoint.message ?? 'No ground-truth residual is available for alerting.'}
+          </p>
+        </section>
+      )}
     </aside>
   )
 }

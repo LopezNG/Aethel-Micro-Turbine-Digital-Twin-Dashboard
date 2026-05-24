@@ -1,0 +1,77 @@
+{
+  "experiments": {
+    "ex_4": {
+      "baseline": {
+        "mae": 0.2661673830719917,
+        "rmse": 0.4912622152277935,
+        "r2": 0.641290656893587,
+        "mape": 12.388344198250051,
+        "peak_absolute_error": 2.127522720780339,
+        "latency_ms": 0.00025291475210069756,
+        "stationary_rmse": 0.4895768646784226,
+        "rising_transition_rmse": 1.3939819917890444,
+        "falling_transition_rmse": 1.6037847581358748
+      },
+      "lstm": {
+        "mae": 0.2275219046574537,
+        "rmse": 0.4338372458411938,
+        "r2": 0.7202502977791883,
+        "mape": 10.687500993986088,
+        "peak_absolute_error": 2.0308011472393748,
+        "latency_ms": 0.053084359367068096,
+        "stationary_rmse": 0.4339974247027488,
+        "rising_transition_rmse": 0.06741592604530068,
+        "falling_transition_rmse": 0.18103234895124956
+      }
+    },
+    "ex_22": {
+      "baseline": {
+        "mae": 0.16184135616757536,
+        "rmse": 0.19462284929485962,
+        "r2": 0.9400432913523112,
+        "mape": 9.053079626405955,
+        "peak_absolute_error": 0.5485133258954753,
+        "latency_ms": 0.00026897526531876806,
+        "stationary_rmse": 0.19453116906118234,
+        "rising_transition_rmse": 0.21536454223082313,
+        "falling_transition_rmse": 0.18369028175566765
+      },
+      "lstm": {
+        "mae": 0.13479646543352783,
+        "rmse": 0.16716296180868256,
+        "r2": 0.9557686447779027,
+        "mape": 8.075596476618351,
+        "peak_absolute_error": 0.48190254223930484,
+        "latency_ms": 0.05896233215518634,
+        "stationary_rmse": 0.1664171384041374,
+        "rising_transition_rmse": 0.13674884708105253,
+        "falling_transition_rmse": 0.26008723929442445
+      }
+    }
+  },
+  "overall": {
+    "baseline": {
+      "mae": 0.21773908913232712,
+      "rmse": 0.3832647885538537,
+      "r2": 0.7754367169989584,
+      "mape": 10.840109516603432,
+      "peak_absolute_error": 2.127522720780339,
+      "latency_ms": 0.0002603700657748126,
+      "stationary_rmse": 0.38309468961574333,
+      "rising_transition_rmse": 0.3895637058362082,
+      "falling_transition_rmse": 0.4180471520337847
+    },
+    "lstm": {
+      "mae": 0.1844786204486625,
+      "rmse": 0.33736713605060586,
+      "r2": 0.8260011192237877,
+      "mape": 9.475051105279858,
+      "peak_absolute_error": 2.0308011472393748,
+      "latency_ms": 0.05581292291347006,
+      "stationary_rmse": 0.33821588635101807,
+      "rising_transition_rmse": 0.13384259185710484,
+      "falling_transition_rmse": 0.2563357212839926
+    }
+  },
+  "generated_from": "backend_real_model_predictions"
+}
