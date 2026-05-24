@@ -2,6 +2,7 @@ import { Download } from 'lucide-react'
 import { useEffect } from 'react'
 import { useTopbar } from '@/components/layout/TopbarContext'
 import { Breadcrumbs } from '@/components/ui'
+import { ShowcaseDashboard } from '@/features/results/ShowcaseDashboard'
 
 export default function Results() {
   const setTopbar = useTopbar()
@@ -10,7 +11,7 @@ export default function Results() {
     setTopbar({
       left: (
         <Breadcrumbs
-          items={[{ label: 'Results & ML Showcase' }, { label: 'Experiment 22' }]}
+          items={[{ label: 'Results & ML Showcase' }, { label: 'Model Validation' }]}
         />
       ),
       right: (
@@ -25,9 +26,5 @@ export default function Results() {
     })
   }, [setTopbar])
 
-  return (
-    <div className="flex flex-1 items-center justify-center p-6 text-font-secondary">
-      <p className="font-mono text-sm">Results & ML Showcase (TODO)</p>
-    </div>
-  )
+  return <ShowcaseDashboard />
 }
