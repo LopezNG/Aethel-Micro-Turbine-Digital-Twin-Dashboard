@@ -94,7 +94,7 @@ Backend:
 cd backend
 python -m pip install -r requirements.txt
 python scripts/evaluate_models.py
-uvicorn app.main:app --reload
+python -m uvicorn app.main:app --reload
 ```
 
 Frontend:

@@ -7,7 +7,7 @@
         "r2": 0.641290656893587,
         "mape": 12.388344198250051,
         "peak_absolute_error": 2.127522720780339,
-        "latency_ms": 0.00023169984683857846,
+        "latency_ms": 0.000290505359799807,
         "stationary_rmse": 0.4895768646784226,
         "rising_transition_rmse": 1.3939819917890444,
         "falling_transition_rmse": 1.6037847581358748
@@ -18,7 +18,7 @@
         "r2": 0.7202502966658287,
         "mape": 10.68750106104415,
         "peak_absolute_error": 2.0308011472393748,
-        "latency_ms": 0.05658497192440273,
+        "latency_ms": 0.05370604389979072,
         "stationary_rmse": 0.43399742556471993,
         "rising_transition_rmse": 0.06741592604530068,
         "falling_transition_rmse": 0.18103235900778414
@@ -31,7 +31,7 @@
         "r2": 0.9400432913523112,
         "mape": 9.053079626405955,
         "peak_absolute_error": 0.5485133258954753,
-        "latency_ms": 0.00024068315663373314,
+        "latency_ms": 0.00032375736168031193,
         "stationary_rmse": 0.19453116906118234,
         "rising_transition_rmse": 0.21536454223082313,
         "falling_transition_rmse": 0.18369028175566765
@@ -42,7 +42,7 @@
         "r2": 0.9557686541017525,
         "mape": 8.075595891640623,
         "peak_absolute_error": 0.4819022980986798,
-        "latency_ms": 0.04245932862188627,
+        "latency_ms": 0.05491081272090684,
         "stationary_rmse": 0.16641712102204756,
         "rising_transition_rmse": 0.1367488850825423,
         "falling_transition_rmse": 0.260087171942015
@@ -56,7 +56,7 @@
       "r2": 0.7754367169989584,
       "mape": 10.840109516603432,
       "peak_absolute_error": 2.127522720780339,
-      "latency_ms": 0.00023586991235549312,
+      "latency_ms": 0.00030594098759982634,
       "stationary_rmse": 0.38309468961574333,
       "rising_transition_rmse": 0.3895637058362082,
       "falling_transition_rmse": 0.4180471520337847
@@ -67,7 +67,7 @@
       "r2": 0.8260011227903774,
       "mape": 9.475050869661956,
       "peak_absolute_error": 2.0308011472393748,
-      "latency_ms": 0.05002782768878569,
+      "latency_ms": 0.05426529934476046,
       "stationary_rmse": 0.3382158830103903,
       "rising_transition_rmse": 0.13384262852672196,
       "falling_transition_rmse": 0.2563356571370006
