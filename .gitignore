@@ -7,3 +7,27 @@ mlruns
 **/*.pyc
 .env
 .env.*
+
+# Generated ML prediction outputs
+reports/predictions_*.csv
+reports/residuals_*.csv
+reports/live_*.csv
+reports/debug_*.csv
+
+# Python / notebook cache
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+
+# Environment files
+.env
+.venv/
+venv/
+
+# Model training temporary outputs
+*.tmp
+*.log
+
+!reports/metrics_summary.csv
+!reports/model_comparison.csv
+!reports/experiment_summary.csv
