@@ -13,6 +13,7 @@ reports/predictions_*.csv
 reports/residuals_*.csv
 reports/live_*.csv
 reports/debug_*.csv
+reports/metrics_summary.json
 
 # Python / notebook cache
 __pycache__/
