@@ -16,7 +16,18 @@ def test_predict_schema_contains_real_lstm_fields() -> None:
     assert payload["model"] == "lstm"
     assert payload["source"] == "real_lstm_model"
     assert isinstance(payload["predicted_power_kw"], float)
-    assert payload["uncertainty_source"] == "residual_based_prediction_band"
+    assert payload["uncertainty_method"] == "split_conformal_prediction"
+    assert payload["coverage"] == 0.95
+
+
+def test_lstm_explainability_uses_temporal_occlusion() -> None:
+    response = client.get("/api/results/explainability", params={"experiment_id": "ex_22", "model": "lstm"})
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["available"] is True
+    assert payload["method"] == "temporal_occlusion"
+    assert payload["items"]
+    assert payload["items"][0]["label"].startswith("t-")
 
 
 def test_upload_validation_rejects_out_of_range_voltage() -> None:

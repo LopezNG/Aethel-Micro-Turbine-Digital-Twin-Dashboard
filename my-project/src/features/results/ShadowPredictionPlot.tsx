@@ -49,6 +49,14 @@ function formatPower(value: number | null | undefined) {
   return `${value.toFixed(2)} kW`
 }
 
+function formatUncertainty(method: string | null | undefined, coverage: number | null | undefined) {
+  if (method === 'split_conformal_prediction') {
+    return coverage ? `Conformal ${(coverage * 100).toFixed(0)}%` : 'Split conformal'
+  }
+  if (method === 'residual_based_prediction_band') return 'Residual band'
+  return '--'
+}
+
 function buildTransitionBands(data: PredictionPoint[]) {
   const bands: TransitionBand[] = []
   let activeBand: TransitionBand | null = null
@@ -167,7 +175,7 @@ export function ShadowPredictionPlot({
           <p className="mt-1 text-sm text-font-secondary">{subtitle}</p>
         </div>
 
-        <div className="grid grid-cols-3 gap-2 font-mono text-xs">
+        <div className="grid grid-cols-2 gap-2 font-mono text-xs min-[520px]:grid-cols-4">
           <div className="min-w-20 rounded-md border border-white/10 bg-black/20 px-3 py-2">
             <p className="text-font-tertiary">Samples</p>
             <p className="mt-1 text-font-primary">{data.length}</p>
@@ -181,6 +189,10 @@ export function ShadowPredictionPlot({
           <div className="min-w-20 rounded-md border border-white/10 bg-black/20 px-3 py-2">
             <p className="text-font-tertiary">LSTM</p>
             <p className="mt-1 text-accent-cyan">{formatPower(latest?.lstmPrediction)}</p>
+          </div>
+          <div className="min-w-20 rounded-md border border-white/10 bg-black/20 px-3 py-2">
+            <p className="text-font-tertiary">Band</p>
+            <p className="mt-1 text-font-primary">{formatUncertainty(latest?.uncertaintyMethod, latest?.coverage)}</p>
           </div>
         </div>
       </header>

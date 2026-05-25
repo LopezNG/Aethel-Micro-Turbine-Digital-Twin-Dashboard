@@ -2,6 +2,7 @@ backend/.uvicorn.*.log
 my-project/.vite.*.log
 my-project/dist
 my-project/node_modules
+mlruns
 **/__pycache__
 **/*.pyc
 .env

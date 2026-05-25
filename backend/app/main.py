@@ -103,6 +103,22 @@ class PredictSequenceRequest(BaseModel):
         return self
 
 
+class ExplainabilityRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    upload_id: str | None = None
+    samples: list[VoltageSample] | None = Field(default=None, min_length=1, max_length=2048)
+    model: str = "lstm"
+    filter_mode: str = "none"
+    max_lags: int = Field(default=30, ge=1, le=128)
+
+    @model_validator(mode="after")
+    def has_upload_or_samples(self) -> "ExplainabilityRequest":
+        if self.upload_id is None and not self.samples:
+            raise ValueError("Provide upload_id or samples")
+        return self
+
+
 class SimulationControlMessage(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
@@ -295,6 +311,34 @@ def result_feature_importance(model: str = Query(default="lstm")) -> dict[str, A
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
+@app.get("/api/results/explainability")
+def result_explainability(
+    experiment_id: str = Query(...),
+    model: str = Query(default="lstm"),
+    filter_mode: str = Query(default="none"),
+    max_lags: int = Query(default=30, ge=1, le=128),
+) -> dict[str, Any]:
+    try:
+        return results_service.explainability(experiment_id, model, filter_mode, max_lags)
+    except Exception as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@app.post("/api/results/explainability")
+def result_explainability_for_sequence(request: ExplainabilityRequest) -> dict[str, Any]:
+    try:
+        frame = _frame_from_explainability_request(request)
+        validate_uploaded_frame(frame)
+        return model_service.explain_sequence(
+            frame=frame,
+            model_name=request.model,
+            filter_mode=request.filter_mode,
+            max_lags=request.max_lags,
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
 @app.get("/api/results/cross-correlation")
 def result_cross_correlation(
     experiment_id: str = Query(...),
@@ -453,6 +497,8 @@ async def _stream_live(
                     "alert_status": None,
                     "severity": None,
                     "message": None,
+                    "uncertainty_method": prediction.uncertainty_method,
+                    "coverage": prediction.coverage,
                 }
             else:
                 previous_voltage = float(point["input_voltage"])
@@ -554,6 +600,8 @@ def _telemetry_payload(
     high_kw = float(point["uncertainty_upper_kw"])
     actual_kw = point["ground_truth_power_kw"]
     raw_power_kw = float(raw_row["el_power"]) / 1000.0 if "el_power" in raw_row else None
+    uncertainty_method = str(point.get("uncertainty_method", "residual_based_prediction_band"))
+    coverage = point.get("coverage")
     return {
         "type": "telemetry",
         "sequence": sequence,
@@ -580,6 +628,9 @@ def _telemetry_payload(
         "message": point["message"],
         "filter_mode": state.filter_mode,
         "filter_method": "savitzky_golay" if state.filter_mode != "none" else None,
+        "uncertainty_method": uncertainty_method,
+        "uncertainty_source": uncertainty_method,
+        "coverage": coverage if isinstance(coverage, (float, int)) else None,
         "mode": state.mode,
         "is_transition": point["phase"] != "steady_state",
         "el_power": kw_to_watts(actual_kw) if actual_kw is not None else None,
@@ -609,6 +660,24 @@ def _frame_from_sequence_request(request: PredictSequenceRequest) -> pd.DataFram
         if power is not None:
             row["el_power"] = float(power)
         rows.append(row)
+    return pd.DataFrame(rows)
+
+
+def _frame_from_explainability_request(request: ExplainabilityRequest) -> pd.DataFrame:
+    if request.upload_id is not None:
+        if request.upload_id not in uploaded_sequences:
+            raise ValueError("Unknown upload_id")
+        return uploaded_sequences[request.upload_id].copy()
+
+    assert request.samples is not None
+    rows: list[dict[str, float]] = []
+    for index, sample in enumerate(request.samples):
+        rows.append(
+            {
+                "time": float(sample.timestamp if sample.timestamp is not None else sample.time if sample.time is not None else index),
+                "input_voltage": sample.input_voltage,
+            }
+        )
     return pd.DataFrame(rows)
 
 

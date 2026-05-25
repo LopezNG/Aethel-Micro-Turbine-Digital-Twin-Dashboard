@@ -2,5 +2,6 @@
 my-project/node_modules
 my-project/dist
 my-project/.vite
+mlruns
 **/__pycache__
 **/*.pyc

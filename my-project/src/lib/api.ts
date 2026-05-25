@@ -11,6 +11,8 @@ export type ExperimentMetadata = {
   split: ExperimentSplit
   mode: ExperimentMode
   mode_source: string
+  description: string
+  notes: string | null
   sample_count: number
   available_columns: string[]
   voltage_column: string
@@ -78,4 +80,3 @@ async function errorMessage(response: Response) {
     return `${response.status} ${response.statusText}`
   }
 }
-

@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import json
 from dataclasses import asdict, dataclass
 from functools import lru_cache
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal, cast
 
 import numpy as np
 import pandas as pd
@@ -17,6 +18,7 @@ ExperimentMode = Literal["rectangular", "continuous", "unknown"]
 TRAIN_EXPERIMENTS = ("ex_1", "ex_9", "ex_20", "ex_21", "ex_23", "ex_24")
 TEST_EXPERIMENTS = ("ex_4", "ex_22")
 ALL_EXPERIMENTS = TRAIN_EXPERIMENTS + TEST_EXPERIMENTS
+METADATA_PATH = Path(__file__).with_name("experiment_metadata.json")
 
 
 @dataclass(frozen=True)
@@ -26,6 +28,8 @@ class ExperimentMetadata:
     split: ExperimentSplit
     mode: ExperimentMode
     mode_source: str
+    description: str
+    notes: str | None
     sample_count: int
     available_columns: list[str]
     voltage_column: str
@@ -91,7 +95,8 @@ def validate_experiment_frame(frame: pd.DataFrame, label: str = "sequence") -> N
 
 @lru_cache(maxsize=16)
 def _metadata_for(data_dir: Path, experiment_id: str) -> ExperimentMetadata:
-    split: ExperimentSplit = "train" if experiment_id in TRAIN_EXPERIMENTS else "test"
+    manual_metadata = _manual_metadata_for(experiment_id)
+    split: ExperimentSplit = manual_metadata["split"] if manual_metadata else "train" if experiment_id in TRAIN_EXPERIMENTS else "test"
     path = data_dir / split / f"{experiment_id}.csv"
     if not path.exists():
         raise FileNotFoundError(f"Experiment CSV not found at {path}")
@@ -114,7 +119,16 @@ def _metadata_for(data_dir: Path, experiment_id: str) -> ExperimentMetadata:
             if not deltas.empty:
                 median_dt_seconds = float(deltas.median())
 
-    mode, mode_source = infer_mode(frame[voltage_column])
+    if manual_metadata is not None:
+        mode = manual_metadata["mode"]
+        mode_source = "experiment_metadata.json"
+        description = manual_metadata["description"]
+        notes = manual_metadata.get("notes")
+    else:
+        mode, fallback_source = infer_mode(frame[voltage_column])
+        mode_source = f"fallback_voltage_pattern: {fallback_source}"
+        description = f"{split.title()} experiment {experiment_id}"
+        notes = "No manual metadata entry was found; mode was inferred from the voltage profile."
 
     return ExperimentMetadata(
         experiment_id=experiment_id,
@@ -122,6 +136,8 @@ def _metadata_for(data_dir: Path, experiment_id: str) -> ExperimentMetadata:
         split=split,
         mode=mode,
         mode_source=mode_source,
+        description=description,
+        notes=notes,
         sample_count=int(len(frame)),
         available_columns=columns,
         voltage_column=voltage_column,
@@ -137,6 +153,57 @@ def _first_present(columns: list[str], candidates: tuple[str, ...]) -> str | Non
         if candidate in columns:
             return candidate
     return None
+
+
+def _manual_metadata_for(experiment_id: str) -> dict[str, Any] | None:
+    metadata = _load_manual_metadata()
+    return metadata.get(experiment_id)
+
+
+@lru_cache(maxsize=1)
+def _load_manual_metadata(metadata_path: Path = METADATA_PATH) -> dict[str, dict[str, Any]]:
+    if not metadata_path.exists():
+        return {}
+
+    raw = json.loads(metadata_path.read_text(encoding="utf-8"))
+    experiments = raw.get("experiments")
+    if not isinstance(experiments, dict):
+        raise ValueError(f"{metadata_path} must contain an 'experiments' object")
+
+    normalized: dict[str, dict[str, Any]] = {}
+    for experiment_id, payload in experiments.items():
+        normalized_id = normalize_experiment_id(str(experiment_id))
+        if not isinstance(payload, dict):
+            raise ValueError(f"Metadata for {normalized_id} must be an object")
+
+        split = payload.get("split")
+        mode = payload.get("mode")
+        description = payload.get("description")
+        notes = payload.get("notes")
+
+        if split not in {"train", "test"}:
+            raise ValueError(f"Metadata for {normalized_id} has invalid split: {split!r}")
+        if mode not in {"rectangular", "continuous", "unknown"}:
+            raise ValueError(f"Metadata for {normalized_id} has invalid mode: {mode!r}")
+        if not isinstance(description, str) or not description.strip():
+            raise ValueError(f"Metadata for {normalized_id} must include a non-empty description")
+        if notes is not None and not isinstance(notes, str):
+            raise ValueError(f"Metadata notes for {normalized_id} must be a string or null")
+
+        expected_split = "train" if normalized_id in TRAIN_EXPERIMENTS else "test"
+        if split != expected_split:
+            raise ValueError(
+                f"Metadata for {normalized_id} declares split {split!r}, expected {expected_split!r}"
+            )
+
+        normalized[normalized_id] = {
+            "split": cast(ExperimentSplit, split),
+            "mode": cast(ExperimentMode, mode),
+            "description": description.strip(),
+            "notes": notes.strip() if isinstance(notes, str) and notes.strip() else None,
+        }
+
+    return normalized
 
 
 def infer_mode(voltage: pd.Series) -> tuple[ExperimentMode, str]:
@@ -163,4 +230,3 @@ def frame_duration_seconds(frame: pd.DataFrame, time_column: str | None = "time"
     if not np.isfinite(times).all():
         return None
     return float(times.iloc[-1] - times.iloc[0])
-

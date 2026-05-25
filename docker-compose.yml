@@ -1,4 +1,14 @@
 services:
+  mlflow:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    command: ["mlflow", "server", "--backend-store-uri", "/app/mlruns", "--default-artifact-root", "/app/mlruns", "--host", "0.0.0.0", "--port", "5000"]
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./mlruns:/app/mlruns
+
   backend:
     build:
       context: .
@@ -8,8 +18,13 @@ services:
       AETHEL_DATA_DIR: /app/Machine Learning/micro gas turbine electrical energy prediction dataset
       AETHEL_LSTM_ARTIFACT_DIR: /app/Machine Learning/artifacts/lstm
       AETHEL_REPORTS_DIR: /app/reports
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+    depends_on:
+      - mlflow
     ports:
       - "8000:8000"
+    volumes:
+      - ./mlruns:/app/mlruns
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=2)"]
       interval: 20s

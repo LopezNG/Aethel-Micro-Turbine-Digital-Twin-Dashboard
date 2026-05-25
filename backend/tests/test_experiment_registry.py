@@ -16,6 +16,7 @@ def test_registry_lists_all_eight_experiments() -> None:
     }
     assert all(experiment.sample_count > 0 for experiment in experiments)
     assert all(experiment.voltage_column == "input_voltage" for experiment in experiments)
+    assert all(experiment.mode_source == "experiment_metadata.json" for experiment in experiments)
 
 
 def test_registry_filters_by_split_and_mode() -> None:
@@ -24,4 +25,4 @@ def test_registry_filters_by_split_and_mode() -> None:
     continuous = registry.list(mode="continuous", include_unknown=True)
     assert {experiment.experiment_id for experiment in test_experiments} == {"ex_4", "ex_22"}
     assert any(experiment.experiment_id == "ex_22" for experiment in continuous)
-
+    assert registry.get("ex_9").mode == "unknown"

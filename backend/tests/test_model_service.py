@@ -12,6 +12,8 @@ def test_lstm_prediction_is_continuous_power() -> None:
     assert isinstance(prediction.predicted_power_kw, float)
     assert math.isfinite(prediction.predicted_power_kw)
     assert 0.5 < prediction.predicted_power_kw < 4.0
+    assert prediction.uncertainty_method == "split_conformal_prediction"
+    assert prediction.coverage == 0.95
 
 
 def test_phase_classification() -> None:
@@ -23,4 +25,3 @@ def test_phase_classification() -> None:
         "steady_state",
         "falling_transition",
     ]
-

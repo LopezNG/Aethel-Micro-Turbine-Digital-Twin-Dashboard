@@ -37,6 +37,14 @@ ModelName = Literal["baseline", "lstm"]
 FilterMode = Literal["none", "voltage", "power", "both"]
 PhaseName = Literal["steady_state", "rising_transition", "falling_transition"]
 AlertStatus = Literal["normal", "anomaly", "maintenance_required"]
+UncertaintyMethod = Literal["split_conformal_prediction", "residual_based_prediction_band"]
+
+
+@dataclass(frozen=True)
+class UncertaintyBand:
+    half_width_kw: float
+    method: UncertaintyMethod
+    coverage: float | None
 
 
 @dataclass(frozen=True)
@@ -49,6 +57,8 @@ class Prediction:
     latency_ms: float
     source: str
     uncertainty_source: str
+    uncertainty_method: UncertaintyMethod
+    coverage: float | None
     filtered_voltage: float | None = None
 
 
@@ -68,6 +78,8 @@ class SequencePredictionPoint:
     alert_status: AlertStatus | None
     severity: str | None
     message: str | None
+    uncertainty_method: UncertaintyMethod
+    coverage: float | None
 
 
 def assert_voltage(value: float) -> float:
@@ -224,16 +236,7 @@ class LSTMRegressionModel:
             )
             target_indices = np.arange(self.lookback_steps - 1, values.size, dtype=int)
 
-        flat = windows.reshape(-1, 1)
-        scaled_flat = self.feature_scaler.transform(flat).astype(np.float32)
-        scaled_windows = scaled_flat.reshape(windows.shape[0], self.lookback_steps, len(self.feature_columns))
-        predictions_scaled: list[np.ndarray] = []
-        with torch.no_grad():
-            for start_index in range(0, scaled_windows.shape[0], 2048):
-                batch = torch.as_tensor(scaled_windows[start_index : start_index + 2048], dtype=torch.float32)
-                predictions_scaled.append(self.model(batch).detach().cpu().numpy().reshape(-1, 1))
-        scaled = np.vstack(predictions_scaled)
-        predictions_w = self.target_scaler.inverse_transform(scaled).reshape(-1).astype(float)
+        predictions_w = self._predict_window_batch(windows)
         latency_ms = (time.perf_counter() - start) * 1000.0
         return target_indices, predictions_w, latency_ms
 
@@ -248,6 +251,70 @@ class LSTMRegressionModel:
             pad = np.full(self.lookback_steps - window.size, float(window[0]), dtype=np.float32)
             window = np.concatenate([pad, window])
         return window.astype(np.float32)
+
+    def _predict_window_batch(self, windows: np.ndarray) -> np.ndarray:
+        numeric = np.asarray(windows, dtype=np.float32)
+        if numeric.ndim == 2:
+            if len(self.feature_columns) != 1:
+                raise RuntimeError("LSTM model has multiple features; univariate voltage windows are insufficient")
+            numeric = numeric[:, :, np.newaxis]
+        if numeric.ndim != 3:
+            raise RuntimeError("LSTM input windows must be a 2D or 3D array")
+        if numeric.shape[1] != self.lookback_steps or numeric.shape[2] != len(self.feature_columns):
+            raise RuntimeError(
+                "LSTM input shape does not match deployment metadata: "
+                f"expected (*, {self.lookback_steps}, {len(self.feature_columns)}), got {numeric.shape}"
+            )
+
+        flat = numeric.reshape(-1, len(self.feature_columns))
+        scaled_flat = self.feature_scaler.transform(flat).astype(np.float32)
+        scaled_windows = scaled_flat.reshape(numeric.shape[0], self.lookback_steps, len(self.feature_columns))
+        predictions_scaled: list[np.ndarray] = []
+        with torch.no_grad():
+            for start_index in range(0, scaled_windows.shape[0], 2048):
+                batch = torch.as_tensor(scaled_windows[start_index : start_index + 2048], dtype=torch.float32)
+                predictions_scaled.append(self.model(batch).detach().cpu().numpy().reshape(-1, 1))
+        scaled = np.vstack(predictions_scaled)
+        return self.target_scaler.inverse_transform(scaled).reshape(-1).astype(float)
+
+    def temporal_occlusion(self, voltage_values: Sequence[float], max_lags: int = 30) -> dict[str, object]:
+        if self.lookback_steps <= 0 or len(self.feature_columns) != 1:
+            return {
+                "available": False,
+                "reason": "Temporal occlusion could not be computed because model input shape is unavailable.",
+                "items": [],
+            }
+
+        values = np.asarray([assert_voltage(value) for value in voltage_values], dtype=np.float32)
+        if values.size == 0:
+            raise ValueError("At least one input_voltage sample is required")
+
+        window = self._window_for(values, values.size - 1)
+        original_w = float(self._predict_window_batch(window.reshape(1, self.lookback_steps))[0])
+        lag_count = max(1, min(int(max_lags), self.lookback_steps))
+        baseline = float(np.mean(window))
+        occluded = np.repeat(window.reshape(1, self.lookback_steps), lag_count, axis=0)
+        for lag_index in range(lag_count):
+            occluded[lag_index, self.lookback_steps - lag_index - 1] = baseline
+
+        occluded_w = self._predict_window_batch(occluded)
+        raw_changes_kw = np.asarray(watts_to_kw(np.abs(original_w - occluded_w)), dtype=float)
+        max_change = float(np.max(raw_changes_kw)) if raw_changes_kw.size else 0.0
+        items = [
+            {
+                "label": f"t-{lag_index + 1}",
+                "importance": float(raw_change / max_change) if max_change > 1e-12 else 0.0,
+                "raw_change_kw": float(raw_change),
+            }
+            for lag_index, raw_change in enumerate(raw_changes_kw)
+        ]
+        return {
+            "available": True,
+            "method": "temporal_occlusion",
+            "items": items,
+            "baseline": "sequence_mean",
+            "lookback_steps": self.lookback_steps,
+        }
 
 
 class BaselineRegressionModel:
@@ -356,16 +423,15 @@ class ModelService:
         if model == "lstm":
             lstm = self.load_model("lstm")
             prediction_w, latency_ms = lstm.predict_latest(voltage_window)  # type: ignore[union-attr]
-            residual_std = self.validation_residual_std_kw("lstm")
             source = lstm.source  # type: ignore[union-attr]
         else:
             predictions_w, latency_ms = self.baseline.predict_values([latest_voltage])
             prediction_w = float(predictions_w[-1])
-            residual_std = self.validation_residual_std_kw("baseline")
             source = self.baseline.source
 
         prediction_kw = float(watts_to_kw(max(prediction_w, 0.0)))
-        band = 1.96 * residual_std
+        uncertainty = self.uncertainty_band_kw(model)
+        band = uncertainty.half_width_kw
         return Prediction(
             model=model,
             input_voltage=latest_voltage,
@@ -374,7 +440,9 @@ class ModelService:
             uncertainty_upper_kw=prediction_kw + band,
             latency_ms=latency_ms,
             source=source,
-            uncertainty_source="residual_based_prediction_band",
+            uncertainty_source=uncertainty.method,
+            uncertainty_method=uncertainty.method,
+            coverage=uncertainty.coverage,
             filtered_voltage=None,
         )
 
@@ -405,7 +473,8 @@ class ModelService:
 
         predictions_kw = np.asarray(watts_to_kw(np.maximum(predictions_w, 0.0)), dtype=float)
         residual_std = self.validation_residual_std_kw(model)
-        band = 1.96 * residual_std
+        uncertainty = self.uncertainty_band_kw(model)
+        band = uncertainty.half_width_kw
         phases = classify_phases(voltage)
         alert_run = 0
         points: list[dict[str, object]] = []
@@ -453,18 +522,116 @@ class ModelService:
                     alert_status=alert_status,
                     severity=severity,
                     message=message,
+                    uncertainty_method=uncertainty.method,
+                    coverage=uncertainty.coverage,
                 ).__dict__
             )
 
         return {
             "model": model,
             "source": source,
-            "uncertainty_source": "residual_based_prediction_band",
+            "uncertainty_source": uncertainty.method,
+            "uncertainty_method": uncertainty.method,
+            "coverage": uncertainty.coverage,
             "filter_mode": mode,
             "filter_method": "savitzky_golay" if mode != "none" else None,
             "points": points,
             "latency_ms": latency_ms,
         }
+
+    def explain_sequence(
+        self,
+        frame: pd.DataFrame,
+        model_name: str = "lstm",
+        filter_mode: str | None = "none",
+        max_lags: int = 30,
+    ) -> dict[str, object]:
+        model = normalize_model_name(model_name)
+        if model == "baseline":
+            coefficient = abs(self.baseline.coefficient_w_per_v)
+            return {
+                "available": True,
+                "model": model,
+                "method": "linear_regression_coefficient",
+                "items": [
+                    {
+                        "label": "input_voltage",
+                        "importance": 1.0,
+                        "raw_value": coefficient,
+                        "unit": "abs(watts_per_volt)",
+                    }
+                ],
+            }
+
+        if self._lstm is None:
+            return {
+                "available": False,
+                "model": model,
+                "reason": f"Temporal occlusion could not be computed because the LSTM model is unavailable: {self._lstm_error}",
+                "items": [],
+            }
+
+        lstm = self.load_model("lstm")
+        if not isinstance(lstm, LSTMRegressionModel) or lstm.lookback_steps <= 0 or len(lstm.feature_columns) != 1:
+            return {
+                "available": False,
+                "model": model,
+                "reason": "Temporal occlusion could not be computed because model input shape is unavailable.",
+                "items": [],
+            }
+
+        try:
+            prepared = prepare_prediction_frame(frame, normalize_filter_mode(filter_mode))
+            voltage = prepared["input_voltage"].to_numpy(dtype=float)
+            return {"model": model, **lstm.temporal_occlusion(voltage, max_lags=max_lags)}
+        except Exception as exc:
+            return {
+                "available": False,
+                "model": model,
+                "reason": f"Temporal occlusion could not be computed: {exc}",
+                "items": [],
+            }
+
+    def uncertainty_band_kw(self, model_name: str) -> UncertaintyBand:
+        model = normalize_model_name(model_name)
+        if model == "lstm":
+            conformal_q95 = self.lstm_conformal_q95_kw
+            if conformal_q95 is not None:
+                return UncertaintyBand(
+                    half_width_kw=max(conformal_q95, 0.001),
+                    method="split_conformal_prediction",
+                    coverage=0.95,
+                )
+
+        return UncertaintyBand(
+            half_width_kw=1.96 * self.validation_residual_std_kw(model),
+            method="residual_based_prediction_band",
+            coverage=None,
+        )
+
+    @cached_property
+    def lstm_conformal_q95_kw(self) -> float | None:
+        validation_path = self.artifact_dir / "validation_predictions.csv"
+        if not validation_path.exists():
+            return None
+
+        frame = pd.read_csv(validation_path)
+        errors_w: np.ndarray | None = None
+        if "residual" in frame.columns:
+            errors_w = np.abs(pd.to_numeric(frame["residual"], errors="coerce").to_numpy(dtype=float))
+        elif {"y_true", "y_pred"} <= set(frame.columns):
+            actual = pd.to_numeric(frame["y_true"], errors="coerce").to_numpy(dtype=float)
+            predicted = pd.to_numeric(frame["y_pred"], errors="coerce").to_numpy(dtype=float)
+            errors_w = np.abs(actual - predicted)
+
+        if errors_w is None:
+            return None
+
+        finite_errors_w = errors_w[np.isfinite(errors_w)]
+        if finite_errors_w.size == 0:
+            return None
+        errors_kw = np.asarray(watts_to_kw(finite_errors_w), dtype=float)
+        return float(np.quantile(errors_kw, 0.95))
 
     def validation_residual_std_kw(self, model_name: str) -> float:
         model = normalize_model_name(model_name)
@@ -538,6 +705,8 @@ def model_service_to_legacy_payload(prediction: Prediction) -> dict[str, object]
         "latency_ms": prediction.latency_ms,
         "source": prediction.source,
         "uncertainty_source": prediction.uncertainty_source,
+        "uncertainty_method": prediction.uncertainty_method,
+        "coverage": prediction.coverage,
         "predicted_power": predicted_w,
         "confidence_interval": {"low": low_w, "high": high_w},
         "confidence_low": low_w,
@@ -552,4 +721,3 @@ def model_service_to_legacy_payload(prediction: Prediction) -> dict[str, object]
 def mean(values: Sequence[float]) -> float | None:
     filtered = [float(value) for value in values if math.isfinite(float(value))]
     return fmean(filtered) if filtered else None
-

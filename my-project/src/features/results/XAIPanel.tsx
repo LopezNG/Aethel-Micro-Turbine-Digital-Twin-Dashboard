@@ -15,14 +15,14 @@ import {
 import { cn } from '@/lib/cn'
 import type {
   CrossCorrelationPayload,
-  FeatureImportancePoint,
-  FeatureImportanceResponse,
+  ExplainabilityPoint,
+  ExplainabilityResponse,
   ResidualPoint,
   ResponseCharacteristicsPayload,
 } from './types'
 
 type XAIPanelProps = {
-  featureImportance: FeatureImportanceResponse
+  explainability: ExplainabilityResponse
   residuals: ResidualPoint[]
   crossCorrelation: CrossCorrelationPayload | null
   responseCharacteristics: ResponseCharacteristicsPayload | null
@@ -39,14 +39,17 @@ type TooltipProps<T> = {
   payload?: TooltipPayload<T>[]
 }
 
-function FeatureTooltip({ active, payload }: TooltipProps<FeatureImportancePoint>) {
+function ExplanationTooltip({ active, payload }: TooltipProps<ExplainabilityPoint>) {
   const point = payload?.[0]?.payload
   if (!active || !point) return null
 
   return (
     <div className="rounded-md border border-white/10 bg-bg-deep/95 px-3 py-2 shadow-[0_18px_48px_rgba(0,0,0,0.42)]">
-      <p className="text-xs font-semibold text-font-primary">{point.feature}</p>
+      <p className="text-xs font-semibold text-font-primary">{point.label}</p>
       <p className="mt-1 font-mono text-xs text-accent-cyan">{point.importance.toFixed(2)} importance</p>
+      {typeof point.raw_change_kw === 'number' && (
+        <p className="mt-1 font-mono text-xs text-font-tertiary">{point.raw_change_kw.toFixed(4)} kW delta</p>
+      )}
     </div>
   )
 }
@@ -68,7 +71,7 @@ function ResidualTooltip({ active, payload }: TooltipProps<ResidualPoint>) {
 }
 
 export function XAIPanel({
-  featureImportance,
+  explainability,
   residuals,
   crossCorrelation,
   responseCharacteristics,
@@ -80,6 +83,8 @@ export function XAIPanel({
     const maxAbs = Math.max(...residuals.map((point) => Math.abs(point.residual)))
     return { mean, maxAbs }
   }, [residuals])
+
+  const responseEvents = responseCharacteristics?.events ?? responseCharacteristics?.steps ?? []
 
   return (
     <section
@@ -95,18 +100,18 @@ export function XAIPanel({
               <BrainCircuit className="h-4 w-4 text-accent-cyan" />
               Explainable AI
             </div>
-            <h2 className="mt-2 text-lg font-semibold text-font-primary">Feature Importance</h2>
+            <h2 className="mt-2 text-lg font-semibold text-font-primary">Temporal Occlusion</h2>
           </div>
           <span className="rounded-md border border-accent-cyan/20 bg-accent-cyan/10 px-2.5 py-1 font-mono text-xs text-accent-cyan">
-            Temporal
+            {explainability.method?.replaceAll('_', ' ') ?? 'Unavailable'}
           </span>
         </header>
 
-        {featureImportance.available ? (
+        {explainability.available ? (
           <div className="mt-4 h-72 min-w-0">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
-                data={featureImportance.items}
+                data={explainability.items}
                 layout="vertical"
                 margin={{ top: 8, right: 24, bottom: 8, left: 8 }}
               >
@@ -121,13 +126,13 @@ export function XAIPanel({
                 />
                 <YAxis
                   axisLine={false}
-                  dataKey="feature"
+                  dataKey="label"
                   tick={{ fill: '#8B95A5', fontSize: 11 }}
                   tickLine={false}
                   type="category"
                   width={112}
                 />
-                <Tooltip content={<FeatureTooltip />} cursor={{ fill: 'rgba(0,245,255,0.05)' }} />
+                <Tooltip content={<ExplanationTooltip />} cursor={{ fill: 'rgba(0,245,255,0.05)' }} />
                 <Bar
                   dataKey="importance"
                   fill="#00F5FF"
@@ -139,7 +144,7 @@ export function XAIPanel({
           </div>
         ) : (
           <div className="mt-4 grid h-72 place-items-center rounded-lg border border-dashed border-white/10 bg-bg-deep/50 p-6 text-center text-sm leading-6 text-font-secondary">
-            {featureImportance.reason}
+            {explainability.reason}
           </div>
         )}
       </article>
@@ -248,36 +253,39 @@ export function XAIPanel({
         <h2 className="text-lg font-semibold text-font-primary">Response Characteristics</h2>
         {responseCharacteristics?.available ? (
           <div className="mt-4 grid gap-3 md:grid-cols-2">
-            {responseCharacteristics.steps.slice(0, 4).map((step) => {
-              const predicted = step.predicted
-              return (
-                <div key={`${step.step_time}-${step.to_voltage}`} className="rounded-lg border border-white/10 bg-bg-deep/50 p-3">
-                  <p className="font-mono text-xs text-font-tertiary">
-                    {step.from_voltage.toFixed(2)}V → {step.to_voltage.toFixed(2)}V
-                  </p>
-                  <div className="mt-3 grid grid-cols-2 gap-2 font-mono text-xs">
-                    <span className="text-font-secondary">Rise</span>
-                    <span className="text-right text-font-primary">
-                      {predicted?.rise_time_seconds === null || predicted?.rise_time_seconds === undefined
-                        ? '--'
-                        : `${predicted.rise_time_seconds.toFixed(2)}s`}
-                    </span>
-                    <span className="text-font-secondary">Settling</span>
-                    <span className="text-right text-font-primary">
-                      {predicted?.settling_time_seconds === null || predicted?.settling_time_seconds === undefined
-                        ? '--'
-                        : `${predicted.settling_time_seconds.toFixed(2)}s`}
-                    </span>
-                    <span className="text-font-secondary">Overshoot</span>
-                    <span className="text-right text-font-primary">
-                      {predicted?.overshoot_percent === null || predicted?.overshoot_percent === undefined
-                        ? '--'
-                        : `${predicted.overshoot_percent.toFixed(1)}%`}
-                    </span>
-                  </div>
+            {responseEvents.slice(0, 4).map((event) => (
+              <div key={`${event.step_time}-${event.to_voltage ?? event.direction}`} className="rounded-lg border border-white/10 bg-bg-deep/50 p-3">
+                <p className="font-mono text-xs text-font-tertiary">
+                  {event.from_voltage?.toFixed(2) ?? '--'}V to {event.to_voltage?.toFixed(2) ?? '--'}V - {event.direction}
+                </p>
+                <div className="mt-3 grid grid-cols-2 gap-2 font-mono text-xs">
+                  <span className="text-font-secondary">Rise</span>
+                  <span className="text-right text-font-primary">
+                    {event.rise_time_seconds === null || event.rise_time_seconds === undefined
+                      ? '--'
+                      : `${event.rise_time_seconds.toFixed(2)}s`}
+                  </span>
+                  <span className="text-font-secondary">Settling</span>
+                  <span className="text-right text-font-primary">
+                    {event.settling_time_seconds === null || event.settling_time_seconds === undefined
+                      ? '--'
+                      : `${event.settling_time_seconds.toFixed(2)}s`}
+                  </span>
+                  <span className="text-font-secondary">Overshoot</span>
+                  <span className="text-right text-font-primary">
+                    {event.overshoot_percent === null || event.overshoot_percent === undefined
+                      ? '--'
+                      : `${event.overshoot_percent.toFixed(1)}%`}
+                  </span>
+                  <span className="text-font-secondary">Final</span>
+                  <span className="text-right text-font-primary">
+                    {event.final_value_kw === null || event.final_value_kw === undefined
+                      ? '--'
+                      : `${event.final_value_kw.toFixed(2)} kW`}
+                  </span>
                 </div>
-              )
-            })}
+              </div>
+            ))}
           </div>
         ) : (
           <p className="mt-4 rounded-lg border border-dashed border-white/10 bg-bg-deep/50 p-4 text-sm text-font-secondary">

@@ -11,7 +11,7 @@ import type {
   BackendMetric,
   BackendPredictionPayload,
   CrossCorrelationPayload,
-  FeatureImportanceResponse,
+  ExplainabilityResponse,
   MetricComparison,
   PredictionPoint,
   ResidualPoint,
@@ -53,10 +53,10 @@ function SegmentButton<T extends string>({
   )
 }
 
-const emptyFeatureImportance: FeatureImportanceResponse = {
+const emptyExplainability: ExplainabilityResponse = {
   available: false,
   model: 'lstm',
-  reason: 'Feature importance has not been loaded.',
+  reason: 'Temporal occlusion has not been loaded.',
   items: [],
 }
 
@@ -67,7 +67,7 @@ export function ShowcaseDashboard() {
   const [summary, setSummary] = useState<SummaryPayload | null>(null)
   const [series, setSeries] = useState<PredictionPoint[]>([])
   const [residuals, setResiduals] = useState<ResidualPoint[]>([])
-  const [featureImportance, setFeatureImportance] = useState<FeatureImportanceResponse>(emptyFeatureImportance)
+  const [explainability, setExplainability] = useState<ExplainabilityResponse>(emptyExplainability)
   const [crossCorrelation, setCrossCorrelation] = useState<CrossCorrelationPayload | null>(null)
   const [responseCharacteristics, setResponseCharacteristics] = useState<ResponseCharacteristicsPayload | null>(null)
   const [loading, setLoading] = useState(true)
@@ -103,14 +103,14 @@ export function ShowcaseDashboard() {
       setLoading(true)
       setLastError(null)
       try {
-        const [baseline, lstm, residualPayload, importancePayload, heatmapPayload, responsePayload] = await Promise.all([
+        const [baseline, lstm, residualPayload, explanationPayload, heatmapPayload, responsePayload] = await Promise.all([
           apiGet<BackendPredictionPayload>('/api/results/predictions', { experiment_id: datasetId, model: 'baseline' }),
           apiGet<BackendPredictionPayload>('/api/results/predictions', { experiment_id: datasetId, model: 'lstm' }),
           apiGet<{ points: Array<{ sample: number; timestamp: number; predicted_power_kw: number; residual: number | null; phase: ResidualPoint['phase'] }> }>(
             '/api/results/residuals',
             { experiment_id: datasetId, model: 'lstm' },
           ),
-          apiGet<FeatureImportanceResponse>('/api/results/feature-importance', { model: 'lstm' }),
+          apiGet<ExplainabilityResponse>('/api/results/explainability', { experiment_id: datasetId, model: 'lstm' }),
           apiGet<CrossCorrelationPayload>('/api/results/cross-correlation', { experiment_id: datasetId, model: 'lstm' }),
           apiGet<ResponseCharacteristicsPayload>('/api/results/response-characteristics', { experiment_id: datasetId, model: 'lstm' }),
         ])
@@ -127,7 +127,7 @@ export function ShowcaseDashboard() {
               phase: point.phase,
             })),
         )
-        setFeatureImportance(normalizeFeatureImportance(importancePayload))
+        setExplainability(normalizeExplainability(explanationPayload))
         setCrossCorrelation(heatmapPayload)
         setResponseCharacteristics(responsePayload)
       } catch (error) {
@@ -231,7 +231,7 @@ export function ShowcaseDashboard() {
             </div>
           ) : (
             <XAIPanel
-              featureImportance={featureImportance}
+              explainability={explainability}
               residuals={residuals}
               crossCorrelation={crossCorrelation}
               responseCharacteristics={responseCharacteristics}
@@ -258,6 +258,8 @@ function mergePredictionSeries(baseline: BackendPredictionPayload, lstm: Backend
       lstmPrediction: point.predicted_power_kw,
       uncertaintyLower: point.uncertainty_lower_kw,
       uncertaintyUpper: point.uncertainty_upper_kw,
+      uncertaintyMethod: point.uncertainty_method ?? lstm.uncertainty_method ?? null,
+      coverage: point.coverage ?? lstm.coverage ?? null,
       phase: point.phase,
     }
   })
@@ -289,13 +291,13 @@ function buildMetrics(metrics?: { baseline?: BackendMetric; lstm?: BackendMetric
   })
 }
 
-function normalizeFeatureImportance(payload: FeatureImportanceResponse): FeatureImportanceResponse {
+function normalizeExplainability(payload: ExplainabilityResponse): ExplainabilityResponse {
   return {
     ...payload,
     items: payload.items.map((item) => ({
       ...item,
+      label: item.label ?? (item as unknown as { feature?: string }).feature ?? 'lag',
       rawValue: item.rawValue ?? (item as unknown as { raw_value?: number }).raw_value,
     })),
   }
 }
-

@@ -158,7 +158,7 @@ export function TelemetryChart({ points, status, lastError }: TelemetryChartProp
             />
             <Area
               yAxisId="power"
-              name="Confidence"
+              name="Prediction Band"
               type="monotone"
               dataKey="confidenceRange"
               stroke="none"

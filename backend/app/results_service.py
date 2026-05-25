@@ -130,6 +130,29 @@ class ResultsService:
             "items": [],
         }
 
+    def explainability(
+        self,
+        experiment_id: str,
+        model_name: str = "lstm",
+        filter_mode: str = "none",
+        max_lags: int = 30,
+    ) -> dict[str, Any]:
+        frame = self.registry.load_frame(experiment_id)
+        explanation_frame, target_index, sequence_selection = _frame_for_temporal_explanation(frame)
+        payload = self.model_service.explain_sequence(
+            frame=explanation_frame,
+            model_name=model_name,
+            filter_mode=filter_mode,
+            max_lags=max_lags,
+        )
+        return {
+            "experiment_id": experiment_id,
+            "target_sample_index": target_index,
+            "target_timestamp": _timestamp_at(frame, target_index),
+            "sequence_selection": sequence_selection,
+            **payload,
+        }
+
     def cross_correlation(self, experiment_id: str, model_name: str = "lstm", filter_mode: str = "none") -> dict[str, Any]:
         payload = self.predictions(experiment_id, model_name, filter_mode, pad_initial=True)
         points = payload["points"]
@@ -173,7 +196,8 @@ class ResultsService:
             "experiment_id": experiment_id,
             "model": normalize_model_name(model_name),
             "available": len(characteristics) > 0,
-            "reason": None if characteristics else "No clear step response was detected.",
+            "reason": None if characteristics else "No clear step transition detected in this experiment.",
+            "events": characteristics,
             "steps": characteristics,
         }
 
@@ -308,6 +332,32 @@ def _phase_value(phase_lookup: dict[str, dict[str, Any]], phase: str, key: str) 
     return float(value) if value is not None else None
 
 
+def _frame_for_temporal_explanation(frame: pd.DataFrame) -> tuple[pd.DataFrame, int, str]:
+    if frame.empty or "input_voltage" not in frame.columns:
+        return frame.copy(), 0, "latest_sample"
+
+    voltage = pd.to_numeric(frame["input_voltage"], errors="coerce").to_numpy(dtype=float)
+    if voltage.size < 2:
+        return frame.copy(), max(len(frame) - 1, 0), "latest_sample"
+
+    step_threshold = max(0.25, PHASE_DELTA_THRESHOLD * 5.0)
+    candidates = np.flatnonzero(np.abs(np.diff(voltage)) >= step_threshold) + 1
+    target_index = int(candidates[-1]) if candidates.size else len(frame) - 1
+    selection = "latest_voltage_step" if candidates.size else "latest_sample"
+    return frame.iloc[: target_index + 1].copy(), target_index, selection
+
+
+def _timestamp_at(frame: pd.DataFrame, index: int) -> float | None:
+    if frame.empty:
+        return None
+    safe_index = min(max(index, 0), len(frame) - 1)
+    time_column = "time" if "time" in frame.columns else "timestamp" if "timestamp" in frame.columns else None
+    if time_column is None:
+        return float(safe_index)
+    value = pd.to_numeric(pd.Series([frame.iloc[safe_index][time_column]]), errors="coerce").iloc[0]
+    return float(value) if pd.notna(value) else None
+
+
 def _lagged_corr(left: np.ndarray, right: np.ndarray, lag_seconds: int, median_dt_seconds: float) -> float | None:
     offset = int(round(lag_seconds / median_dt_seconds))
     if offset <= 0:
@@ -334,64 +384,112 @@ def calculate_response_characteristics(points: Sequence[dict[str, Any]]) -> list
     times = np.asarray([point["timestamp"] for point in points], dtype=float)
     voltage = np.asarray([point["input_voltage"] for point in points], dtype=float)
     predicted = np.asarray([point["predicted_power_kw"] for point in points], dtype=float)
-    actual = np.asarray(
-        [np.nan if point["ground_truth_power_kw"] is None else point["ground_truth_power_kw"] for point in points],
-        dtype=float,
-    )
-    deltas = np.diff(voltage, prepend=voltage[0])
-    step_threshold = max(0.5, PHASE_DELTA_THRESHOLD * 10)
-    candidates = [index for index, delta in enumerate(deltas) if abs(delta) >= step_threshold]
+    if not np.isfinite(times).all() or np.any(np.diff(times) <= 0):
+        times = np.arange(len(points), dtype=float)
+
+    median_dt = float(np.nanmedian(np.diff(times))) if len(times) > 1 else 1.0
+    if not math.isfinite(median_dt) or median_dt <= 0:
+        median_dt = 1.0
+
+    candidates = _detect_voltage_step_indices(times, voltage, median_dt)
     results: list[dict[str, Any]] = []
-    for candidate in candidates[:8]:
-        next_candidates = [index for index in candidates if index > candidate + 5]
-        end = min(next_candidates[0] if next_candidates else candidate + 120, len(points))
-        if end - candidate < 8:
+    min_window = max(8, int(round(8.0 / median_dt)))
+    max_window = max(min_window, int(round(180.0 / median_dt)))
+    for position, candidate in enumerate(candidates):
+        next_candidate = candidates[position + 1] if position + 1 < len(candidates) else len(points)
+        end = min(next_candidate, candidate + max_window, len(points))
+        if end - candidate < min_window:
             continue
-        actual_characteristics = _characteristics_for_signal(times, actual, candidate, end)
-        predicted_characteristics = _characteristics_for_signal(times, predicted, candidate, end)
-        if actual_characteristics is None and predicted_characteristics is None:
-            continue
-        results.append(
-            {
-                "step_time": float(times[candidate]),
-                "from_voltage": float(voltage[candidate - 1] if candidate > 0 else voltage[candidate]),
-                "to_voltage": float(voltage[candidate]),
-                "actual": actual_characteristics,
-                "predicted": predicted_characteristics,
-            }
+
+        voltage_delta = float(voltage[candidate] - voltage[candidate - 1]) if candidate > 0 else 0.0
+        event = _characteristics_for_step(
+            times=times,
+            signal=predicted,
+            voltage=voltage,
+            start=candidate,
+            end=end,
+            direction="rising" if voltage_delta >= 0 else "falling",
+            median_dt_seconds=median_dt,
         )
+        if event is None:
+            continue
+        results.append(event)
     return results
 
 
-def _characteristics_for_signal(times: np.ndarray, signal: np.ndarray, start: int, end: int) -> dict[str, float | None] | None:
+def _detect_voltage_step_indices(times: np.ndarray, voltage: np.ndarray, median_dt_seconds: float) -> list[int]:
+    if voltage.size < 2:
+        return []
+
+    dt = np.diff(times)
+    safe_dt = np.where(np.isfinite(dt) & (dt > 0), dt, median_dt_seconds)
+    dv = np.diff(voltage)
+    derivative = np.divide(dv, safe_dt, out=np.zeros_like(dv, dtype=float), where=safe_dt > 0)
+    voltage_step_threshold = max(0.25, PHASE_DELTA_THRESHOLD * 5.0)
+    derivative_threshold = max(voltage_step_threshold / max(median_dt_seconds, 1e-6), PHASE_DELTA_THRESHOLD * 5.0)
+    raw_candidates = [
+        int(index + 1)
+        for index, (delta_v, delta_per_second) in enumerate(zip(dv, derivative))
+        if abs(float(delta_v)) >= voltage_step_threshold and abs(float(delta_per_second)) >= derivative_threshold
+    ]
+    if not raw_candidates:
+        return []
+
+    min_separation = max(3, int(round(2.0 / median_dt_seconds)))
+    grouped: list[int] = []
+    for candidate in raw_candidates:
+        if not grouped or candidate - grouped[-1] > min_separation:
+            grouped.append(candidate)
+            continue
+        previous = grouped[-1]
+        if abs(float(dv[candidate - 1])) > abs(float(dv[previous - 1])):
+            grouped[-1] = candidate
+    return grouped
+
+
+def _characteristics_for_step(
+    times: np.ndarray,
+    signal: np.ndarray,
+    voltage: np.ndarray,
+    start: int,
+    end: int,
+    direction: str,
+    median_dt_seconds: float,
+) -> dict[str, float | str | None] | None:
     window = signal[start:end]
     if window.size < 8 or not np.isfinite(window).any():
         return None
-    previous_start = max(0, start - 8)
+    previous_window = max(5, int(round(8.0 / median_dt_seconds)))
+    previous_start = max(0, start - previous_window)
     previous = signal[previous_start:start]
     if previous.size == 0 or not np.isfinite(previous).any():
         initial = float(window[0])
     else:
-        initial = float(np.nanmedian(previous))
+        initial = float(np.nanmedian(previous[-previous_window:]))
     final = float(np.nanmedian(window[-max(5, min(12, window.size // 4)) :]))
     delta = final - initial
     if not math.isfinite(delta) or abs(delta) < 0.03:
         return None
-    direction = 1.0 if delta >= 0 else -1.0
+    response_direction = 1.0 if delta >= 0 else -1.0
     ten = initial + delta * 0.1
     ninety = initial + delta * 0.9
-    t10 = _first_crossing_time(times[start:end], window, ten, direction)
-    t90 = _first_crossing_time(times[start:end], window, ninety, direction)
+    t10 = _first_crossing_time(times[start:end], window, ten, response_direction)
+    t90 = _first_crossing_time(times[start:end], window, ninety, response_direction)
     rise_time = None if t10 is None or t90 is None else max(float(t90 - t10), 0.0)
     settling_time = _settling_time(times[start:end], window, final, abs(delta), tolerance=0.05)
-    peak_response = float(np.nanmax(window) if direction > 0 else np.nanmin(window))
-    overshoot = max((peak_response - final) * direction / abs(delta) * 100.0, 0.0)
+    peak_response = float(np.nanmax(window) if response_direction > 0 else np.nanmin(window))
+    overshoot = max((peak_response - final) * response_direction / abs(delta) * 100.0, 0.0)
     return {
+        "step_time": float(times[start]),
+        "direction": direction,
+        "from_voltage": float(voltage[start - 1] if start > 0 else voltage[start]),
+        "to_voltage": float(voltage[start]),
         "rise_time_seconds": rise_time,
         "settling_time_seconds": settling_time,
         "overshoot_percent": float(overshoot),
         "peak_response_kw": peak_response,
-        "final_steady_state_kw": final,
+        "final_value_kw": final,
+        "initial_value_kw": initial,
     }
 
 
@@ -419,4 +517,3 @@ def _settling_time(times: np.ndarray, signal: np.ndarray, final: float, delta_ab
 def _write_json(path: Path, payload: Any) -> Path:
     path.write_text(json.dumps(payload, indent=2, allow_nan=False), encoding="utf-8")
     return path
-

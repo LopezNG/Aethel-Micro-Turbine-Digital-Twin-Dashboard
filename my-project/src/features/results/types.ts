@@ -9,6 +9,8 @@ export type PredictionPoint = {
   lstmPrediction: number | null
   uncertaintyLower: number | null
   uncertaintyUpper: number | null
+  uncertaintyMethod: string | null
+  coverage: number | null
   phase: PredictionPhase
 }
 
@@ -22,19 +24,20 @@ export type MetricComparison = {
   lowerIsBetter: boolean
 }
 
-export type FeatureImportancePoint = {
-  feature: string
+export type ExplainabilityPoint = {
+  label: string
   importance: number
+  raw_change_kw?: number
   rawValue?: number
   unit?: string
 }
 
-export type FeatureImportanceResponse = {
+export type ExplainabilityResponse = {
   available: boolean
   model: string
   method?: string
   reason?: string
-  items: FeatureImportancePoint[]
+  items: ExplainabilityPoint[]
 }
 
 export type ResidualPoint = {
@@ -55,26 +58,24 @@ export type CrossCorrelationPayload = {
   rows: CrossCorrelationRow[]
 }
 
-export type ResponseSignalCharacteristics = {
+export type ResponseEvent = {
+  step_time: number
+  direction: 'rising' | 'falling'
+  from_voltage?: number
+  to_voltage?: number
   rise_time_seconds: number | null
   settling_time_seconds: number | null
   overshoot_percent: number | null
   peak_response_kw: number | null
-  final_steady_state_kw: number | null
-}
-
-export type ResponseStep = {
-  step_time: number
-  from_voltage: number
-  to_voltage: number
-  actual: ResponseSignalCharacteristics | null
-  predicted: ResponseSignalCharacteristics | null
+  final_value_kw: number | null
+  initial_value_kw?: number | null
 }
 
 export type ResponseCharacteristicsPayload = {
   available: boolean
   reason: string | null
-  steps: ResponseStep[]
+  events: ResponseEvent[]
+  steps?: ResponseEvent[]
 }
 
 export type BackendPredictionPoint = {
@@ -84,12 +85,17 @@ export type BackendPredictionPoint = {
   predicted_power_kw: number
   uncertainty_lower_kw: number
   uncertainty_upper_kw: number
+  uncertainty_method?: string
+  coverage?: number | null
   residual: number | null
   phase: PredictionPhase
 }
 
 export type BackendPredictionPayload = {
   model: 'baseline' | 'lstm'
+  uncertainty_method?: string
+  uncertainty_source?: string
+  coverage?: number | null
   points: BackendPredictionPoint[]
 }
 
@@ -109,4 +115,3 @@ export type SummaryPayload = {
   experiments: Record<string, { baseline?: BackendMetric; lstm?: BackendMetric }>
   overall: { baseline?: BackendMetric; lstm?: BackendMetric }
 }
-

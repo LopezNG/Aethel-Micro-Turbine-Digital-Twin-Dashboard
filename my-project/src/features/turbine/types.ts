@@ -15,6 +15,8 @@ export type TelemetryPoint = {
   predictedPower: number
   confidenceLow: number
   confidenceHigh: number
+  uncertaintyMethod: string
+  coverage: number | null
   filteredVoltage: number
   uncertainty: number
   modelVersion: ModelVersion

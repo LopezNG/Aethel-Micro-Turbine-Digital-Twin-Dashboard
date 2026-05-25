@@ -17,6 +17,14 @@ function formatLag(value: number | null) {
   return `${value.toFixed(2)} s`
 }
 
+function formatUncertaintyMethod(method: string | null | undefined, coverage: number | null | undefined) {
+  if (method === 'split_conformal_prediction') {
+    return coverage ? `split conformal ${(coverage * 100).toFixed(0)}%` : 'split conformal'
+  }
+  if (method === 'residual_based_prediction_band') return 'residual band'
+  return 'unknown band'
+}
+
 function lagTone(value: number | null) {
   if (value === null) return 'bg-font-tertiary'
   if (value < 1) return 'bg-accent-green'
@@ -115,13 +123,13 @@ export function MetricsPanel({ metrics, currentPoint }: MetricsPanelProps) {
 
       <section className="grid grid-cols-2 gap-3 font-mono text-xs">
         <div className="rounded-lg border border-white/10 bg-black/20 p-3">
-          <p className="text-font-tertiary">CI Width</p>
+          <p className="text-font-tertiary">Band Width</p>
           <p className="mt-2 text-lg font-semibold text-accent-cyan">
             {formatWatts(metrics.confidenceWidth)}
           </p>
         </div>
         <div className="rounded-lg border border-white/10 bg-black/20 p-3">
-          <p className="text-font-tertiary">Relative CI</p>
+          <p className="text-font-tertiary">Relative Band</p>
           <p className="mt-2 text-lg font-semibold text-font-primary">
             {confidencePercent === null ? '--' : `${confidencePercent.toFixed(1)}%`}
           </p>
@@ -134,6 +142,9 @@ export function MetricsPanel({ metrics, currentPoint }: MetricsPanelProps) {
           {currentPoint?.isTransition
             ? 'Voltage edge detected. Transition weighting is active for the rolling error metric.'
             : 'Stationary regime. Error is evaluated against settled turbine output.'}
+        </p>
+        <p className="mt-2 font-mono text-xs text-font-tertiary">
+          Band: {formatUncertaintyMethod(currentPoint?.uncertaintyMethod, currentPoint?.coverage)}
         </p>
       </section>
 

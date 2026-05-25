@@ -79,6 +79,8 @@ function parseTelemetry(payload: Record<string, unknown>): TelemetryPoint | null
     predictedPower: numberValue(payload.predicted_power),
     confidenceLow: numberValue(payload.confidence_low),
     confidenceHigh: numberValue(payload.confidence_high),
+    uncertaintyMethod: stringValue(payload.uncertainty_method, stringValue(payload.uncertainty_source, 'unknown')),
+    coverage: typeof payload.coverage === 'number' ? payload.coverage : null,
     filteredVoltage: numberValue(payload.filtered_voltage),
     uncertainty: numberValue(payload.uncertainty),
     modelVersion,

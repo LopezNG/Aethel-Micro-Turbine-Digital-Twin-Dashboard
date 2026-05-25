@@ -1,0 +1,52 @@
+{
+  "experiments": {
+    "ex_1": {
+      "split": "train",
+      "mode": "rectangular",
+      "description": "Training experiment with repeated rectangular voltage levels between low and high setpoints.",
+      "notes": "Manual registry label. The CSV does not contain an explicit experiment-mode column."
+    },
+    "ex_9": {
+      "split": "train",
+      "mode": "unknown",
+      "description": "Training experiment with a multi-level stepped voltage profile that is not explicitly labeled as rectangular or continuous.",
+      "notes": "Kept as unknown because the source CSV has no mode label and the voltage pattern is ambiguous."
+    },
+    "ex_20": {
+      "split": "train",
+      "mode": "rectangular",
+      "description": "Training experiment with rectangular step changes across four voltage setpoints.",
+      "notes": "Manual registry label. The CSV does not contain an explicit experiment-mode column."
+    },
+    "ex_21": {
+      "split": "train",
+      "mode": "rectangular",
+      "description": "Training experiment with repeated rectangular step changes across four voltage setpoints.",
+      "notes": "Manual registry label. The CSV does not contain an explicit experiment-mode column."
+    },
+    "ex_23": {
+      "split": "train",
+      "mode": "continuous",
+      "description": "Training experiment with many voltage levels and frequent changes across the operating range.",
+      "notes": "Manual registry label based on the curated experiment registry, not an in-CSV field."
+    },
+    "ex_24": {
+      "split": "train",
+      "mode": "continuous",
+      "description": "Training experiment with many voltage levels and frequent changes across the operating range.",
+      "notes": "Manual registry label based on the curated experiment registry, not an in-CSV field."
+    },
+    "ex_4": {
+      "split": "test",
+      "mode": "rectangular",
+      "description": "Held-out test experiment with rectangular step changes across four voltage setpoints.",
+      "notes": "Manual registry label. The CSV does not contain an explicit experiment-mode column."
+    },
+    "ex_22": {
+      "split": "test",
+      "mode": "continuous",
+      "description": "Held-out test experiment with many voltage levels and frequent changes across the operating range.",
+      "notes": "Manual registry label based on the curated experiment registry, not an in-CSV field."
+    }
+  }
+}
